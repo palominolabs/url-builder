@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2012 Palomino Labs, Inc.
+ */
+
+package com.palominolabs.http.url;
+
+import com.google.common.base.Charsets;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.BitSet;
+
+import static org.junit.Assert.assertEquals;
+
+public final class PercentEncoderTest {
+
+    private PercentEncoder alnum;
+    private PercentEncoder alnum16;
+
+    @Before
+    public void setUp() {
+        BitSet bs = new BitSet();
+        for (int i = 'a'; i <= 'z'; i++) {
+            bs.set(i);
+        }
+        for (int i = 'A'; i <= 'Z'; i++) {
+            bs.set(i);
+        }
+        for (int i = '0'; i <= '9'; i++) {
+            bs.set(i);
+        }
+
+        this.alnum = new PercentEncoder(bs, Charsets.UTF_8);
+        this.alnum16 = new PercentEncoder(bs, Charsets.UTF_16BE);
+    }
+
+    @Test
+    public void testDoesntEncodeSafe() {
+        BitSet set = new BitSet();
+        for (int i = 'a'; i <= 'z'; i++) {
+            set.set(i);
+        }
+
+        PercentEncoder pe = new PercentEncoder(set, Charsets.UTF_8);
+        assertEquals("abcd%41%42%43%44", pe.encode("abcdABCD"));
+    }
+
+    @Test
+    public void testEncodeUtf8() {
+        // 1 UTF-16 char (unicode snowman)
+        assertEquals("snowman%E2%98%83", alnum.encode("snowman\u2603"));
+    }
+
+    @Test
+    public void testEncodeUtf8SurrogatePair() {
+        // musical G clef: 1d11e, has to be represented in surrogate pair form
+        assertEquals("clef%F0%9D%84%9E", alnum.encode("clef\ud834\udd1e"));
+    }
+
+    @Test
+    public void testEncodeUtf16() {
+        // 1 UTF-16 char (unicode snowman)
+        assertEquals("snowman%26%03", alnum16.encode("snowman\u2603"));
+    }
+
+    @Test
+    public void testUrlEncodedUtf16SurrogatePair() {
+        // musical G clef: 1d11e, has to be represented in surrogate pair form
+        assertEquals("clef%D8%34%DD%1E", alnum16.encode("clef\ud834\udd1e"));
+    }
+}
