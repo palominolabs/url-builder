@@ -3,6 +3,7 @@ This library's goal is to make it easy to create valid, correctly encoded URL st
 # Example
 
 ```
+// showcase the different encoding rules used on different URL components
 UrlBuilder.forHost("http", "foo.com")
     .pathSegment("with spaces")
     .pathSegments("path", "with", "varArgs")
