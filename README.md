@@ -1,4 +1,4 @@
-This library's goal is to make it easy to create valid, correctly encoded URL strings with a fluent API.
+Use this library to safely create valid, correctly encoded URL strings with a fluent API.
 
 # Example
 
