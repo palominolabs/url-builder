@@ -1,5 +1,19 @@
 Use this library to safely create valid, correctly encoded URL strings with a fluent API.
 
+# Usage
+
+Add this to the `dependencies` block in your `build.gradle`:
+
+    compile 'com.palominolabs.http:url-builder:VERSION'
+
+where `VERSION` is the latest released version.  If you're using Maven, know that your life could be greatly improved by switching to Gradle and use this dependency block:
+
+    <dependency>
+        <groupId>com.palominolabs.http</groupId>
+        <artifactId>url-builder</artifactId>
+        <version>VERSION</version>
+    </dependency>
+
 # Example
 
 ```
