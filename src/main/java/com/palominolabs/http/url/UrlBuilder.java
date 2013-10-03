@@ -53,9 +53,7 @@ public final class UrlBuilder {
 
     private final List<Pair<String, String>> queryParams = Lists.newArrayList();
 
-    private final List<String> pathSegments = Lists.newArrayList();
-
-    private final List<Pair<String, String>> matrixParams = Lists.newArrayList();
+    private final List<PathSegment> pathSegments = Lists.newArrayList();
 
     private final PercentEncoder pathEncoder = getPathEncoder();
     private final PercentEncoder regNameEncoder = getRegNameEncoder();
@@ -107,7 +105,7 @@ public final class UrlBuilder {
 
     @Nonnull
     public UrlBuilder pathSegment(String segment) {
-        pathSegments.add(segment);
+        pathSegments.add(new PathSegment(segment));
         return this;
     }
 
@@ -128,7 +126,13 @@ public final class UrlBuilder {
 
     @Nonnull
     public UrlBuilder matrixParam(@Nonnull String key, @Nonnull String value) {
-        matrixParams.add(Pair.of(key, value));
+        if (pathSegments.isEmpty()) {
+            // create an empty path segment to represent a matrix param applied to the root
+            pathSegment("");
+        }
+
+        PathSegment seg = pathSegments.get(pathSegments.size() - 1);
+        seg.matrixParams.add(Pair.of(key, value));
         return this;
     }
 
@@ -155,24 +159,21 @@ public final class UrlBuilder {
             buf.append(port);
         }
 
-        for (String pathSegment : pathSegments) {
+        for (PathSegment pathSegment : pathSegments) {
             buf.append('/');
-            buf.append(pathEncoder.encode(pathSegment));
+            buf.append(pathEncoder.encode(pathSegment.segment));
+
+
+            for (Pair<String, String> matrixParam : pathSegment.matrixParams) {
+                buf.append(';');
+                buf.append(matrixEncoder.encode(matrixParam.getKey()));
+                buf.append('=');
+                buf.append(matrixEncoder.encode(matrixParam.getValue()));
+            }
         }
 
         if (forceTrailingSlash) {
             buf.append('/');
-        }
-
-        if (pathSegments.isEmpty() && !matrixParams.isEmpty()) {
-            // matrix is technically part of path, so if the path segment exists, it must start with a / per RFC 3986 S3
-            buf.append('/');
-        }
-        for (Pair<String, String> matrixParam : matrixParams) {
-            buf.append(';');
-            buf.append(matrixEncoder.encode(matrixParam.getKey()));
-            buf.append('=');
-            buf.append(matrixEncoder.encode(matrixParam.getValue()));
         }
 
         if (!queryParams.isEmpty()) {
@@ -210,5 +211,14 @@ public final class UrlBuilder {
 
         // it's a reg-name, which MUST be encoded as UTF-8 (regardless of the rest of the URL)
         return regNameEncoder.encode(host);
+    }
+
+    static class PathSegment {
+        private final String segment;
+        private final List<Pair<String, String>> matrixParams = Lists.newArrayList();
+
+        PathSegment(String segment) {
+            this.segment = segment;
+        }
     }
 }

@@ -57,11 +57,12 @@ public final class UrlBuilderTest {
 
     @Test
     public void testMatrixWithReserved() {
-        UrlBuilder ub = forHost("http", "foo.com");
-        ub.matrixParam("foo", "bar");
-        ub.matrixParam("res;=?#/erved", "value");
-        ub.pathSegment("foo");
-        assertUrlEquals("http://foo.com/foo;foo=bar;res%3B%3D%3F%23%2Ferved=value", ub.toUrlString());
+        UrlBuilder ub = forHost("http", "foo.com")
+            .pathSegment("foo")
+            .matrixParam("foo", "bar")
+            .matrixParam("res;=?#/erved", "value")
+            .pathSegment("baz");
+        assertUrlEquals("http://foo.com/foo;foo=bar;res%3B%3D%3F%23%2Ferved=value/baz", ub.toUrlString());
     }
 
     @Test
@@ -198,6 +199,25 @@ public final class UrlBuilderTest {
             forHost("https", "foo.com").forceTrailingSlash().pathSegments("a", "b", "c").queryParam("foo", "bar");
 
         assertUrlEquals("https://foo.com/a/b/c/?foo=bar", ub.toUrlString());
+    }
+
+    @Test
+    public void testForceTrailingSlashNoPathSegmentsWithMatrixParams() {
+        UrlBuilder ub = forHost("https", "foo.com").forceTrailingSlash().matrixParam("m1", "v1");
+
+        assertUrlEquals("https://foo.com/;m1=v1/", ub.toUrlString());
+    }
+
+    @Test
+    public void testIntermingledMatrixParamsAndPathSegments() {
+
+        UrlBuilder ub = forHost("http", "foo.com")
+            .pathSegments("seg1", "seg2")
+            .matrixParam("m1", "v1")
+            .pathSegment("seg3")
+            .matrixParam("m2", "v2");
+
+        assertUrlEquals("http://foo.com/seg1/seg2;m1=v1/seg3;m2=v2", ub.toUrlString());
     }
 
     private static void assertUrlEquals(String expected, String actual) {
