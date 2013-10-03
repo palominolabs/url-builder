@@ -103,12 +103,24 @@ public final class UrlBuilder {
         this.port = port;
     }
 
+    /**
+     * Add a path segment.
+     *
+     * @param segment a path segment
+     * @return this
+     */
     @Nonnull
-    public UrlBuilder pathSegment(String segment) {
+    public UrlBuilder pathSegment(@Nonnull String segment) {
         pathSegments.add(new PathSegment(segment));
         return this;
     }
 
+    /**
+     * Add multiple path segments. Equivalent to successive calls to {@link UrlBuilder#pathSegment(String)}.
+     *
+     * @param segments path segments
+     * @return this
+     */
     @Nonnull
     public UrlBuilder pathSegments(String... segments) {
         for (String segment : segments) {
@@ -118,35 +130,67 @@ public final class UrlBuilder {
         return this;
     }
 
+    /**
+     * Add a query parameter. Query parameters will be encoded in the order added.
+     *
+     * @param name  param name
+     * @param value param value
+     * @return this
+     */
     @Nonnull
-    public UrlBuilder queryParam(@Nonnull String key, @Nonnull String value) {
-        queryParams.add(Pair.of(key, value));
+    public UrlBuilder queryParam(@Nonnull String name, @Nonnull String value) {
+        queryParams.add(Pair.of(name, value));
         return this;
     }
 
+    /**
+     * Add a matrix param to the last added path segment. If no segments have been added, the param will be added to the
+     * root. Matrix params will be encoded in the order added.
+     *
+     * @param name  param name
+     * @param value param value
+     * @return this
+     */
     @Nonnull
-    public UrlBuilder matrixParam(@Nonnull String key, @Nonnull String value) {
+    public UrlBuilder matrixParam(@Nonnull String name, @Nonnull String value) {
         if (pathSegments.isEmpty()) {
             // create an empty path segment to represent a matrix param applied to the root
             pathSegment("");
         }
 
         PathSegment seg = pathSegments.get(pathSegments.size() - 1);
-        seg.matrixParams.add(Pair.of(key, value));
+        seg.matrixParams.add(Pair.of(name, value));
         return this;
     }
 
+    /**
+     * Set the fragment.
+     *
+     * @param fragment fragment string
+     * @return this
+     */
     @Nonnull
-    public UrlBuilder fragment(String fragment) {
+    public UrlBuilder fragment(@Nonnull String fragment) {
         this.fragment = fragment;
         return this;
     }
 
+    /**
+     * Force the generated URL to have a trailing slash at the end of the path.
+     *
+     * @return this
+     */
+    @Nonnull
     public UrlBuilder forceTrailingSlash() {
         forceTrailingSlash = true;
         return this;
     }
 
+    /**
+     * Encode the current builder state into a URL string.
+     *
+     * @return a well-formed URL string
+     */
     public String toUrlString() {
         StringBuilder buf = new StringBuilder();
 
@@ -162,7 +206,6 @@ public final class UrlBuilder {
         for (PathSegment pathSegment : pathSegments) {
             buf.append('/');
             buf.append(pathEncoder.encode(pathSegment.segment));
-
 
             for (Pair<String, String> matrixParam : pathSegment.matrixParams) {
                 buf.append(';');
@@ -200,7 +243,7 @@ public final class UrlBuilder {
 
     /**
      * @param host original host string
-     * @return host encoded as in RFC 3986 secion 3.2.2
+     * @return host encoded as in RFC 3986 section 3.2.2
      */
     @Nonnull
     private String encodeHost(String host) {
@@ -213,6 +256,9 @@ public final class UrlBuilder {
         return regNameEncoder.encode(host);
     }
 
+    /**
+     * Bundle of a path segment name and any associated matrix params.
+     */
     static class PathSegment {
         private final String segment;
         private final List<Pair<String, String>> matrixParams = Lists.newArrayList();
