@@ -34,6 +34,8 @@ UrlBuilder.forHost("http", "foo.com")
 
 # Motivation
 
+See [this blog post](http://blog.palominolabs.com/2013/10/03/creating-urls-correctly-and-safely/) for a thorough explanation.
+
 Ideally, the Java SDK would provide a good way to build properly encoded URLs. Unfortunately, it does not.
 
 [`URLEncoder`](http://docs.oracle.com/javase/7/docs/api/java/net/URLEncoder.html) seems like a thing that you want to use, but amazingly enough it actually does HTML form encoding, not URL encoding.
