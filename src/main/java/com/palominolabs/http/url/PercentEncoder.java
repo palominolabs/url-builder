@@ -31,7 +31,7 @@ public final class PercentEncoder {
 
     private final BitSet safeChars;
     private final CharsetEncoder encoder;
-    private StringBuilder stringBuilder = new StringBuilder();
+    private final StringBuilder stringBuilder = new StringBuilder();
 
     /**
      * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
