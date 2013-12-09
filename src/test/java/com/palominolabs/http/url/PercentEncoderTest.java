@@ -4,12 +4,14 @@
 
 package com.palominolabs.http.url;
 
-import com.google.common.base.Charsets;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.BitSet;
 
+import static com.google.common.base.Charsets.UTF_16BE;
+import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.CodingErrorAction.REPLACE;
 import static org.junit.Assert.assertEquals;
 
 public final class PercentEncoderTest {
@@ -30,8 +32,10 @@ public final class PercentEncoderTest {
             bs.set(i);
         }
 
-        this.alnum = new PercentEncoder(bs, Charsets.UTF_8);
-        this.alnum16 = new PercentEncoder(bs, Charsets.UTF_16BE);
+        this.alnum = new PercentEncoder(bs, UTF_8.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
+        this.alnum16 = new PercentEncoder(bs, UTF_16BE.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
     }
 
     @Test
@@ -41,7 +45,8 @@ public final class PercentEncoderTest {
             set.set(i);
         }
 
-        PercentEncoder pe = new PercentEncoder(set, Charsets.UTF_8);
+        PercentEncoder pe = new PercentEncoder(set, UTF_8.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
         assertEquals("abcd%41%42%43%44", pe.encode("abcdABCD"));
     }
 

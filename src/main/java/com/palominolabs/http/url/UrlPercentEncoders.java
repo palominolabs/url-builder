@@ -4,14 +4,17 @@
 
 package com.palominolabs.http.url;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.BitSet;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.CodingErrorAction.REPLACE;
 
 /**
  * See RFC 3986, RFC 1738 and http://www.lunatech-research.com/archives/2009/02/03/what-every-web-developer-must-know-about-url-encoding.
  */
-final class UrlPercentEncoders {
+@ThreadSafe
+public final class UrlPercentEncoders {
 
     /**
      * an encoder for RFC 3986 reg-names
@@ -53,24 +56,29 @@ final class UrlPercentEncoders {
         addFragment(FRAGMENT_BIT_SET);
     }
 
-    static PercentEncoder getRegNameEncoder() {
-        return new PercentEncoder(REG_NAME_BIT_SET, UTF_8);
+    public static PercentEncoder getRegNameEncoder() {
+        return new PercentEncoder(REG_NAME_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
     }
 
-    static PercentEncoder getPathEncoder() {
-        return new PercentEncoder(PATH_BIT_SET, UTF_8);
+    public static PercentEncoder getPathEncoder() {
+        return new PercentEncoder(PATH_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
     }
 
-    static PercentEncoder getMatrixEncoder() {
-        return new PercentEncoder(MATRIX_BIT_SET, UTF_8);
+    public static PercentEncoder getMatrixEncoder() {
+        return new PercentEncoder(MATRIX_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
     }
 
-    static PercentEncoder getQueryEncoder() {
-        return new PercentEncoder(QUERY_BIT_SET, UTF_8);
+    public static PercentEncoder getQueryEncoder() {
+        return new PercentEncoder(QUERY_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
     }
 
-    static PercentEncoder getFragmentEncoder() {
-        return new PercentEncoder(FRAGMENT_BIT_SET, UTF_8);
+    public static PercentEncoder getFragmentEncoder() {
+        return new PercentEncoder(FRAGMENT_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
     }
 
     private UrlPercentEncoders() {
