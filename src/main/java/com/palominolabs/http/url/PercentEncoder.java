@@ -48,7 +48,7 @@ public final class PercentEncoder {
     /**
      * @param input input string
      * @return the input string with every character that's not in safeChars turned into its byte representation via
-     *         encoder and then percent-encoded
+     * encoder and then percent-encoded
      */
     public String encode(String input) {
         // output buf will be at least as long as the input
@@ -99,6 +99,14 @@ public final class PercentEncoder {
         }
 
         return stringBuilder.toString();
+    }
+
+    static boolean isHighSurrogate(char c) {
+        return c >= 0xD800 && c <= 0xDBFF;
+    }
+
+    static boolean isLowSurrogate(char c) {
+        return c >= 0xDC00 && c <= 0xDFFF;
     }
 
     /**
@@ -155,13 +163,5 @@ public final class PercentEncoder {
         }
 
         return c;
-    }
-
-    private static boolean isHighSurrogate(char c) {
-        return c >= 0xD800 && c <= 0xDBFF;
-    }
-
-    private static boolean isLowSurrogate(char c) {
-        return c >= 0xDC00 && c <= 0xDFFF;
     }
 }

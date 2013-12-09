@@ -5,13 +5,16 @@
 package com.palominolabs.http.url;
 
 import com.google.common.base.Throwables;
-import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 
 import static com.palominolabs.http.url.UrlBuilder.forHost;
+import static com.palominolabs.http.url.UrlBuilder.fromUrl;
 import static org.junit.Assert.assertEquals;
 
 public final class UrlBuilderTest {
@@ -220,10 +223,103 @@ public final class UrlBuilderTest {
         assertUrlEquals("http://foo.com/seg1/seg2;m1=v1/seg3;m2=v2", ub.toUrlString());
     }
 
+    @Test
+    public void testFromUrlWithEverything() throws MalformedURLException {
+        String orig =
+            "https://foo.bar.com:3333/foo/bar;mtx1=val1;mtx2=val2/seg3;m2=v2?q1=v1&q2=v2#zomg%20it's%20a%20fragment";
+        UrlBuilder ub = fromUrl(
+            new URL(orig));
+
+        assertUrlEquals(orig, ub.toUrlString());
+    }
+
+    @Test
+    @Ignore
+    public void testFromUrlWithEmptyPath() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithPort() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithEmptyPathSegent() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithEncodedHost() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithEncodedPathSegment() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithEncodedMatrixParam() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithEncodedQueryParam() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithEncodedFragment() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithMalformedMatrixPair() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithEmptyPathSegmentWithMatrixParams() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testFromUrlWithPathSegmentEndingWithSemicolon() {
+
+    }
+
+    @Test
+    @Ignore
+
+    public void testPercentDecodeInvalidPair() {
+
+    }
+
     private static void assertUrlEquals(String expected, String actual) {
-        Assert.assertEquals(expected, actual);
+        assertEquals(expected, actual);
         try {
-            Assert.assertEquals(expected, new URI(actual).toString());
+            assertEquals(expected, new URI(actual).toString());
         } catch (URISyntaxException e) {
             throw Throwables.propagate(e);
         }

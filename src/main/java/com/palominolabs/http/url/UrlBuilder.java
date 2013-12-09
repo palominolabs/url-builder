@@ -10,6 +10,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -88,6 +92,74 @@ public final class UrlBuilder {
      */
     public static UrlBuilder forHost(@Nonnull String scheme, @Nonnull String host, int port) {
         return new UrlBuilder(scheme, host, port);
+    }
+
+    public static UrlBuilder fromUrl(@Nonnull URL url) {
+        Integer port = url.getPort();
+        if (port == -1) {
+            port = null;
+        }
+
+        // TODO decode protocol and host
+        UrlBuilder ub = new UrlBuilder(url.getProtocol(), url.getHost(), port);
+
+        for (String pathChunk : url.getPath().split("/")) {
+            if (pathChunk.equals("")) {
+                continue;
+            }
+
+            if (pathChunk.charAt(0) == ';') {
+                // empty path segment, but matrix params
+                // TODO interpret rest of pathChunk as encoded matrix params
+                continue;
+            }
+
+            // otherwise, path chunk is non empty and does not start with a ';'
+
+            String[] pathChunkMatrixChunks = pathChunk.split(";");
+
+            if (pathChunkMatrixChunks.length > 1) {
+                // we found a ; so there are matrix params
+
+                ub.pathSegment(pathChunkMatrixChunks[0]);
+
+                for (int i = 1; i < pathChunkMatrixChunks.length; i++) {
+                    String[] mtxPair = pathChunkMatrixChunks[i].split("=");
+                    if (mtxPair.length != 2) {
+                        throw new IllegalArgumentException(
+                            "Malformed matrix param: <" + pathChunkMatrixChunks[i] + ">");
+                    }
+
+                    String mtxName = mtxPair[0];
+                    String mtxVal = mtxPair[1];
+                    // TODO decode
+                    ub.matrixParam(mtxName, mtxVal);
+                }
+            } else if (pathChunkMatrixChunks.length == 1) {
+                // Just a segment by itself, possibly ending with a meaningless but harmless ';'
+                // TODO decode
+                ub.pathSegment(pathChunkMatrixChunks[0]);
+            }
+
+            // otherwise, chunk is simply ';', so do not append empty path segment or matrix params.
+        }
+
+        if (url.getQuery() != null) {
+            String q = url.getQuery();
+
+            for (String queryChunk : q.split("&")) {
+                String[] queryParamChunks = queryChunk.split("=");
+
+                // TODO decode
+                ub.queryParam(queryParamChunks[0], queryParamChunks[1]);
+            }
+        }
+
+        if (url.getRef() != null) {
+            ub.fragment(url.getRef());
+        }
+
+        return ub;
     }
 
     /**
@@ -259,7 +331,7 @@ public final class UrlBuilder {
     /**
      * Bundle of a path segment name and any associated matrix params.
      */
-    static class PathSegment {
+    private static class PathSegment {
         private final String segment;
         private final List<Pair<String, String>> matrixParams = Lists.newArrayList();
 
@@ -267,4 +339,5 @@ public final class UrlBuilder {
             this.segment = segment;
         }
     }
+
 }
