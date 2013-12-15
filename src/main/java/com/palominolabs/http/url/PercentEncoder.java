@@ -7,13 +7,12 @@ package com.palominolabs.http.url;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
 import java.util.BitSet;
 
 /**
@@ -32,17 +31,17 @@ public final class PercentEncoder {
 
     private final BitSet safeChars;
     private final CharsetEncoder encoder;
+    private final StringBuilder stringBuilder = new StringBuilder();
 
     /**
-     * @param safeChars the set of chars to NOT encode, stored as a bitset with the int positions corresponding to those
-     *                  chars set to true. Treated as read only.
-     * @param charset   charset to use to encode unsafe chars into bytes
+     * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
+     *                       those chars set to true. Treated as read only.
+     * @param charsetEncoder charset encoder to encode characters with. Make sure to not re-use CharsetEncoder instances
+     *                       across threads.
      */
-    PercentEncoder(BitSet safeChars, Charset charset) {
+    public PercentEncoder(@Nonnull BitSet safeChars, @Nonnull CharsetEncoder charsetEncoder) {
         this.safeChars = safeChars;
-        // TODO perhaps allow this policy to be customized?
-        this.encoder = charset.newEncoder().onMalformedInput(CodingErrorAction.REPLACE)
-            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        this.encoder = charsetEncoder;
     }
 
     /**
@@ -50,9 +49,11 @@ public final class PercentEncoder {
      * @return the input string with every character that's not in safeChars turned into its byte representation via
      * encoder and then percent-encoded
      */
-    public String encode(String input) {
+    @Nonnull
+    public String encode(@Nonnull CharSequence input) {
         // output buf will be at least as long as the input
-        StringBuilder stringBuilder = new StringBuilder(input.length());
+        stringBuilder.setLength(0);
+        stringBuilder.ensureCapacity(input.length());
 
         // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
 
