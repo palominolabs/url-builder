@@ -11,9 +11,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -94,7 +94,34 @@ public final class UrlBuilder {
         return new UrlBuilder(scheme, host, port);
     }
 
-    public static UrlBuilder fromUrl(@Nonnull URL url) {
+    /**
+     * Calls {@link UrlBuilder#fromUrl(URL, CharsetDecoder)} with a UTF-8 CharsetDecoder.
+     *
+     * @param url url to initialize builder with
+     * @return a UrlBuilder containing the host, path, etc. from the url
+     * @throws CharacterCodingException if char decoding fails
+     * @see UrlBuilder#fromUrl(URL, CharsetDecoder)
+     */
+    @Nonnull
+    public static UrlBuilder fromUrl(@Nonnull URL url) throws CharacterCodingException {
+        return fromUrl(url, StandardCharsets.UTF_8.newDecoder());
+    }
+
+    /**
+     * Create a UrlBuilder initialized with the contents of a {@link URL}.
+     *
+     * @param url            url to initialize builder with
+     * @param charsetDecoder the decoder to decode encoded bytes with
+     * @return a UrlBuilder containing the host, path, etc. from the url
+     * @throws CharacterCodingException if char decoding fails
+     * @see UrlBuilder#fromUrl(URL, CharsetDecoder)
+     */
+    @Nonnull
+    public static UrlBuilder fromUrl(@Nonnull URL url, @Nonnull CharsetDecoder charsetDecoder) throws
+        CharacterCodingException {
+
+        PercentDecoder decoder = new PercentDecoder(charsetDecoder, 16, 16);
+
         Integer port = url.getPort();
         if (port == -1) {
             port = null;
@@ -138,7 +165,7 @@ public final class UrlBuilder {
             } else if (pathChunkMatrixChunks.length == 1) {
                 // Just a segment by itself, possibly ending with a meaningless but harmless ';'
                 // TODO decode
-                ub.pathSegment(pathChunkMatrixChunks[0]);
+                ub.pathSegment(decoder.decode(pathChunkMatrixChunks[0]));
             }
 
             // otherwise, chunk is simply ';', so do not append empty path segment or matrix params.
@@ -339,5 +366,4 @@ public final class UrlBuilder {
             this.segment = segment;
         }
     }
-
 }

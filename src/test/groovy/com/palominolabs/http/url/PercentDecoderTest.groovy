@@ -19,18 +19,18 @@ class PercentDecoderTest {
 
   @Test
   public void testDecodesWithoutPercents() {
-    assert 'asdf' == decoder.percentDecode('asdf')
+    assert 'asdf' == decoder.decode('asdf')
   }
 
   @Test
   public void testDecodeSingleByte() {
-    assert '#' == decoder.percentDecode('%23')
+    assert '#' == decoder.decode('%23')
   }
 
   @Test
   public void testIncompletePercentPairNoNumbers() {
     try {
-      decoder.percentDecode('%')
+      decoder.decode('%')
       fail()
     } catch (IllegalArgumentException e) {
       assert 'Could not percent decode <%>: incomplete %-pair at position 0' == e.message
@@ -40,7 +40,7 @@ class PercentDecoderTest {
   @Test
   public void testIncompletePercentPairOneNumber() {
     try {
-      decoder.percentDecode('%2')
+      decoder.decode('%2')
       fail()
     } catch (IllegalArgumentException e) {
       assert 'Could not percent decode <%2>: incomplete %-pair at position 0' == e.message
@@ -87,7 +87,7 @@ class PercentDecoderTest {
       def codePointsHex = codePoints.collect({ int i -> Integer.toHexString(i) })
 
       try {
-        decodedBytes = decoder.percentDecode(encoder.encode(orig.toString())).getBytes(UTF_8)
+        decodedBytes = decoder.decode(encoder.encode(orig.toString())).getBytes(UTF_8)
       } catch (IllegalArgumentException e) {
         List<String> charHex = new ArrayList<String>();
         for (int i = 0; i < orig.toString().length(); i++) {

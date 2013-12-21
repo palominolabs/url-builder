@@ -1,5 +1,6 @@
 package com.palominolabs.http.url;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -25,16 +26,16 @@ final class PercentDecoder {
     private final CharsetDecoder decoder;
 
     /**
-     * The decoded string
+     * The decoded string for the current input
      */
-    private final StringBuilder decodedStringBuf = new StringBuilder();
+    private final StringBuilder outputBuf = new StringBuilder();
 
     /**
      * @param charsetDecoder            Charset to decode bytes into chars with
      * @param initialEncodedByteBufSize Initial size of buffer that holds encoded bytes
      * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
      */
-    PercentDecoder(CharsetDecoder charsetDecoder, int initialEncodedByteBufSize, int decodedCharBufSize) {
+    PercentDecoder(@Nonnull CharsetDecoder charsetDecoder, int initialEncodedByteBufSize, int decodedCharBufSize) {
         encodedBuf = ByteBuffer.allocate(initialEncodedByteBufSize);
         decodedCharBuf = CharBuffer.allocate(decodedCharBufSize);
         decoder = charsetDecoder;
@@ -45,11 +46,12 @@ final class PercentDecoder {
      * @return Corresponding string with %-encoded data decoded and converted to their corresponding characters
      * @throws CharacterCodingException if character decoding fails
      */
-    String percentDecode(CharSequence input) throws CharacterCodingException {
-        decodedStringBuf.setLength(0);
+    @Nonnull
+    String decode(@Nonnull CharSequence input) throws CharacterCodingException {
+        outputBuf.setLength(0);
         // this is almost always an underestimate of the size needed:
         // only a 4-byte encoding (which is 12 characters input) would case this to be an overestimate
-        decodedStringBuf.ensureCapacity(input.length() / 8);
+        outputBuf.ensureCapacity(input.length() / 8);
         encodedBuf.clear();
 
         for (int i = 0; i < input.length(); i++) {
@@ -57,7 +59,7 @@ final class PercentDecoder {
             if (c != '%') {
                 handleEncodedBytes();
 
-                decodedStringBuf.append(c);
+                outputBuf.append(c);
                 continue;
             }
 
@@ -87,11 +89,11 @@ final class PercentDecoder {
 
         handleEncodedBytes();
 
-        return decodedStringBuf.toString();
+        return outputBuf.toString();
     }
 
     /**
-     * Decode any buffered encoded bytes.
+     * Decode any buffered encoded bytes and write them to the output buf.
      */
     private void handleEncodedBytes() throws CharacterCodingException {
         if (encodedBuf.position() == 0) {
@@ -170,6 +172,6 @@ final class PercentDecoder {
      */
     private void appendDecodedChars() {
         decodedCharBuf.flip();
-        decodedStringBuf.append(decodedCharBuf);
+        outputBuf.append(decodedCharBuf);
     }
 }
