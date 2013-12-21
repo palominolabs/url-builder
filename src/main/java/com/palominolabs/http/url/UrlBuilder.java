@@ -135,62 +135,82 @@ public final class UrlBuilder {
         }
 
         // TODO decode protocol
-        UrlBuilder ub = new UrlBuilder(url.getProtocol(), regNameDecoder.decode(url.getHost()), port);
+        UrlBuilder builder = new UrlBuilder(url.getProtocol(), regNameDecoder.decode(url.getHost()), port);
 
+        buildFromPath(builder, decoder, url);
+
+        buildFromQuery(builder, decoder, url);
+
+        if (url.getRef() != null) {
+            builder.fragment(decoder.decode(url.getRef()));
+        }
+
+        return builder;
+    }
+
+    /**
+     * Populate the path segments of a url builder from a url
+     *
+     * @param builder builder
+     * @param decoder decoder
+     * @param url     url
+     * @throws CharacterCodingException
+     */
+    private static void buildFromPath(UrlBuilder builder, PercentDecoder decoder, URL url) throws
+        CharacterCodingException {
         for (String pathChunk : url.getPath().split("/")) {
             if (pathChunk.equals("")) {
                 continue;
             }
 
             if (pathChunk.charAt(0) == ';') {
+                builder.pathSegment("");
                 // empty path segment, but matrix params
-                // TODO interpret rest of pathChunk as encoded matrix params
+                for (String matrixChunk : pathChunk.substring(1).split(";")) {
+                    buildFromMatrixParamChunk(decoder, builder, matrixChunk);
+                }
+
                 continue;
             }
 
             // otherwise, path chunk is non empty and does not start with a ';'
 
-            String[] pathChunkMatrixChunks = pathChunk.split(";");
+            String[] matrixChunks = pathChunk.split(";");
 
-            if (pathChunkMatrixChunks.length > 1) {
-                // we found a ; so there are matrix params
+            // first chunk is always the path segment. If there is a trailing ; and no matrix params, the ; will
+            // not be included in the final url.
+            builder.pathSegment(decoder.decode(matrixChunks[0]));
 
-                ub.pathSegment(decoder.decode(pathChunkMatrixChunks[0]));
-
-                for (int i = 1; i < pathChunkMatrixChunks.length; i++) {
-                    String[] mtxPair = pathChunkMatrixChunks[i].split("=");
-                    if (mtxPair.length != 2) {
-                        throw new IllegalArgumentException(
-                            "Malformed matrix param: <" + pathChunkMatrixChunks[i] + ">");
-                    }
-
-                    String mtxName = mtxPair[0];
-                    String mtxVal = mtxPair[1];
-                    ub.matrixParam(decoder.decode(mtxName), decoder.decode(mtxVal));
-                }
-            } else if (pathChunkMatrixChunks.length == 1) {
-                // Just a segment by itself, possibly ending with a meaningless but harmless ';'
-                ub.pathSegment(decoder.decode(pathChunkMatrixChunks[0]));
+            // if there any other chunks, they're matrix param pairs
+            for (int i = 1; i < matrixChunks.length; i++) {
+                buildFromMatrixParamChunk(decoder, builder, matrixChunks[i]);
             }
-
-            // otherwise, chunk is simply ';', so do not append empty path segment or matrix params.
         }
+    }
 
+    /**
+     * Populate a url builder based on the query of a url
+     *
+     * @param builder builder
+     * @param decoder decoder
+     * @param url     url
+     * @throws CharacterCodingException
+     */
+    private static void buildFromQuery(UrlBuilder builder, PercentDecoder decoder, URL url) throws
+        CharacterCodingException {
         if (url.getQuery() != null) {
             String q = url.getQuery();
 
             for (String queryChunk : q.split("&")) {
                 String[] queryParamChunks = queryChunk.split("=");
 
-                ub.queryParam(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1]));
+                if (queryParamChunks.length != 2) {
+                    throw new IllegalArgumentException("Malformed query param: <" + queryChunk + ">");
+                }
+
+                builder.queryParam(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1]));
             }
         }
-
-        if (url.getRef() != null) {
-            ub.fragment(decoder.decode(url.getRef()));
-        }
-
-        return ub;
     }
 
     /**
@@ -342,6 +362,19 @@ public final class UrlBuilder {
         }
 
         return buf.toString();
+    }
+
+    private static void buildFromMatrixParamChunk(PercentDecoder decoder, UrlBuilder ub, String pathMatrixChunk) throws
+        CharacterCodingException {
+        String[] mtxPair = pathMatrixChunk.split("=");
+        if (mtxPair.length != 2) {
+            throw new IllegalArgumentException(
+                "Malformed matrix param: <" + pathMatrixChunk + ">");
+        }
+
+        String mtxName = mtxPair[0];
+        String mtxVal = mtxPair[1];
+        ub.matrixParam(decoder.decode(mtxName), decoder.decode(mtxVal));
     }
 
     /**
