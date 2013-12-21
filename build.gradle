@@ -1,4 +1,4 @@
-apply plugin: 'java'
+apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
@@ -7,7 +7,6 @@ version = '1.0.3-SNAPSHOT'
 ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 sourceCompatibility = JavaVersion.VERSION_1_6
-targetCompatibility = JavaVersion.VERSION_1_6
 
 ext {
   depVersions = [
@@ -16,7 +15,7 @@ ext {
 }
 
 dependencies {
-  compile 'com.google.code.findbugs:jsr305:2.0.1'
+  compile 'com.google.code.findbugs:jsr305:2.0.2'
   compile 'com.google.guava:guava:15.0'
   compile 'org.apache.commons:commons-lang3:3.1'
 
