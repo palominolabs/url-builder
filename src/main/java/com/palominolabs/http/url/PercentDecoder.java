@@ -3,80 +3,67 @@ package com.palominolabs.http.url;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
+
+import static java.nio.charset.CoderResult.OVERFLOW;
+import static java.nio.charset.CoderResult.UNDERFLOW;
 
 @NotThreadSafe
 final class PercentDecoder {
 
     /**
-     * Contains the bytes represented by the current few %-triples
+     * bytes represented by the current sequence of %-triples
      */
     private ByteBuffer encodedBuf;
 
     /**
-     * Written to with decoded chars
+     * Written to with decoded chars by decoder
      */
     private final CharBuffer decodedCharBuf;
     private final CharsetDecoder decoder;
 
-    private final StringBuilder buf = new StringBuilder();
+    /**
+     * The decoded string
+     */
+    private final StringBuilder decodedStringBuf = new StringBuilder();
 
-    PercentDecoder(Charset charset) {
-        CharsetEncoder encoder = charset.newEncoder();
-        encodedBuf = ByteBuffer.allocate(16);
-        decodedCharBuf = CharBuffer.allocate(16);
-        decoder = charset.newDecoder().onMalformedInput(CodingErrorAction.REPLACE)
-            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+    /**
+     * @param charsetDecoder            Charset to decode bytes into chars with
+     * @param initialEncodedByteBufSize Initial size of buffer that holds encoded bytes
+     * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
+     */
+    PercentDecoder(CharsetDecoder charsetDecoder, int initialEncodedByteBufSize, int decodedCharBufSize) {
+        encodedBuf = ByteBuffer.allocate(initialEncodedByteBufSize);
+        decodedCharBuf = CharBuffer.allocate(decodedCharBufSize);
+        decoder = charsetDecoder;
     }
 
-    String percentDecode(CharSequence encoded) {
-        buf.setLength(0);
+    /**
+     * @param input Input with %-encoded representation of characters in this instance's configured character set
+     * @return Corresponding string with %-encoded data decoded and converted to their corresponding characters
+     * @throws CharacterCodingException if character decoding fails
+     */
+    String percentDecode(CharSequence input) throws CharacterCodingException {
+        decodedStringBuf.setLength(0);
         // this is almost always an underestimate of the size needed:
-        // only a 4-byte encoding (which is 12 characters encoded) would case this to be an overestimate
-        buf.ensureCapacity(encoded.length() / 8);
+        // only a 4-byte encoding (which is 12 characters input) would case this to be an overestimate
+        decodedStringBuf.ensureCapacity(input.length() / 8);
+        encodedBuf.clear();
 
-        for (int i = 0; i < encoded.length(); i++) {
-            char c = encoded.charAt(i);
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
             if (c != '%') {
-                buf.append(c);
+                handleEncodedBytes();
 
-                if (encodedBuf.position() == 0) {
-                    // this is NOT the first non-%-triple input char, so we didn't just finish an encoded sequence
-                    continue;
-                }
-
-                // if there's anything to decode, then decode it
-                CoderResult coderResult = decoder.decode(encodedBuf, decodedCharBuf, true);
-                if (coderResult == CoderResult.UNDERFLOW) {
-                    // we're done, but still have to flush
-                    decodedCharBuf.flip();
-                    buf.append(decodedCharBuf);
-                    decodedCharBuf.clear();
-                    CoderResult flushResult = decoder.flush(decodedCharBuf);
-                    if (flushResult != CoderResult.UNDERFLOW) {
-                        throw new IllegalStateException("Got flush result " + flushResult);
-                    }
-                    decodedCharBuf.flip();
-                    buf.append(decodedCharBuf);
-                    decodedCharBuf.clear();
-                } else if (coderResult == CoderResult.OVERFLOW) {
-                    decodedCharBuf.flip();
-                    buf.append(decodedCharBuf);
-                    decodedCharBuf.clear();
-                } else {
-                    throw new IllegalStateException("Got unexpected coder result " + coderResult);
-                }
-
-                checkResult(coderResult);
+                decodedStringBuf.append(c);
+                continue;
             }
 
-            if (i + 2 >= encoded.length()) {
+            if (i + 2 >= input.length()) {
                 throw new IllegalArgumentException(
-                    "Could not percent decode <" + encoded + ">: invalid %-pair at position " + i);
+                    "Could not percent decode <" + input + ">: incomplete %-pair at position " + i);
             }
 
             // grow the byte buf if needed
@@ -87,8 +74,9 @@ final class PercentDecoder {
                 encodedBuf = largerBuf;
             }
 
-            int msBits = Character.digit(encoded.charAt(++i), 16);
-            int lsBits = Character.digit(encoded.charAt(++i), 16);
+            // note that we advance i here as we consume chars
+            int msBits = Character.digit(input.charAt(++i), 16);
+            int lsBits = Character.digit(input.charAt(++i), 16);
 
             msBits <<= 4;
             msBits |= lsBits;
@@ -97,12 +85,91 @@ final class PercentDecoder {
             encodedBuf.put((byte) msBits);
         }
 
-        return buf.toString();
+        handleEncodedBytes();
+
+        return decodedStringBuf.toString();
     }
 
-    private static void checkResult(CoderResult result) {
-        if (result.isOverflow()) {
-            throw new IllegalStateException("Somehow got byte buffer overflow");
+    /**
+     * Decode any buffered encoded bytes.
+     */
+    private void handleEncodedBytes() throws CharacterCodingException {
+        if (encodedBuf.position() == 0) {
+            // nothing to do
+            return;
         }
+
+        decoder.reset();
+        CoderResult coderResult;
+
+        // switch to reading mode
+        encodedBuf.flip();
+
+        // loop while we're filling up the decoded char buf, or there's any encoded bytes
+        // decode() in practice seems to only consume bytes when it can decode an entire char...
+        do {
+            decodedCharBuf.clear();
+            coderResult = decoder.decode(encodedBuf, decodedCharBuf, false);
+            throwIfError(coderResult);
+            appendDecodedChars();
+        } while (coderResult == OVERFLOW && encodedBuf.hasRemaining());
+
+        // final decode with end-of-input flag
+        decodedCharBuf.clear();
+        coderResult = decoder.decode(encodedBuf, decodedCharBuf, true);
+        throwIfError(coderResult);
+
+        if (encodedBuf.hasRemaining()) {
+            throw new IllegalStateException("Final decode didn't error, but didn't consume remaining input bytes");
+        }
+        if (coderResult != UNDERFLOW) {
+            throw new IllegalStateException("Expected underflow, but instead final decode returned " + coderResult);
+        }
+
+        appendDecodedChars();
+
+        // we've finished the input, wrap it up
+        encodedBuf.clear();
+        flush();
+    }
+
+    /**
+     * Must only be called when the input encoded bytes buffer is empty
+     *
+     * @throws CharacterCodingException
+     */
+    private void flush() throws CharacterCodingException {
+        CoderResult coderResult;
+        decodedCharBuf.clear();
+
+        coderResult = decoder.flush(decodedCharBuf);
+        appendDecodedChars();
+
+        throwIfError(coderResult);
+
+        if (coderResult != UNDERFLOW) {
+            throw new IllegalStateException("Decoder flush resulted in " + coderResult);
+        }
+    }
+
+    /**
+     * If coderResult is considered an error (i.e. not overflow or underflow), throw the corresponding
+     * CharacterCodingException.
+     *
+     * @param coderResult result to check
+     * @throws CharacterCodingException
+     */
+    private void throwIfError(CoderResult coderResult) throws CharacterCodingException {
+        if (coderResult.isError()) {
+            coderResult.throwException();
+        }
+    }
+
+    /**
+     * Flip the decoded char buf and append it to the string bug
+     */
+    private void appendDecodedChars() {
+        decodedCharBuf.flip();
+        decodedStringBuf.append(decodedCharBuf);
     }
 }
