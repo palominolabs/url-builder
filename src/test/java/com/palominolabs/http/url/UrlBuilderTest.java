@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.CharacterCodingException;
 
 import static com.palominolabs.http.url.UrlBuilder.forHost;
 import static com.palominolabs.http.url.UrlBuilder.fromUrl;
@@ -224,11 +225,10 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testFromUrlWithEverything() throws MalformedURLException {
+    public void testFromUrlWithEverything() throws MalformedURLException, CharacterCodingException {
         String orig =
             "https://foo.bar.com:3333/foo/bar;mtx1=val1;mtx2=val2/seg3;m2=v2?q1=v1&q2=v2#zomg%20it's%20a%20fragment";
-        UrlBuilder ub = fromUrl(
-            new URL(orig));
+        UrlBuilder ub = fromUrl(new URL(orig));
 
         assertUrlEquals(orig, ub.toUrlString());
     }

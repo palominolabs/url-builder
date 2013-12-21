@@ -14,7 +14,7 @@ class PercentDecoderTest {
 
   @Before
   public void setUp() {
-    decoder = new PercentDecoder(UTF_8.newDecoder(), 16, 16)
+    decoder = new PercentDecoder(UTF_8.newDecoder())
   }
 
   @Test

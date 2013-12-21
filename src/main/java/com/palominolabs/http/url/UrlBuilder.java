@@ -13,7 +13,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -23,6 +22,7 @@ import static com.palominolabs.http.url.UrlPercentEncoders.getMatrixEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getPathEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getQueryEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getRegNameEncoder;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Builder for urls with url-encoding applied to path, query param, etc.
@@ -104,14 +104,14 @@ public final class UrlBuilder {
      */
     @Nonnull
     public static UrlBuilder fromUrl(@Nonnull URL url) throws CharacterCodingException {
-        return fromUrl(url, StandardCharsets.UTF_8.newDecoder());
+        return fromUrl(url, UTF_8.newDecoder());
     }
 
     /**
      * Create a UrlBuilder initialized with the contents of a {@link URL}.
      *
      * @param url            url to initialize builder with
-     * @param charsetDecoder the decoder to decode encoded bytes with
+     * @param charsetDecoder the decoder to decode encoded bytes with (except for reg names, which are always UTF-8)
      * @return a UrlBuilder containing the host, path, etc. from the url
      * @throws CharacterCodingException if char decoding fails
      * @see UrlBuilder#fromUrl(URL, CharsetDecoder)
@@ -120,7 +120,14 @@ public final class UrlBuilder {
     public static UrlBuilder fromUrl(@Nonnull URL url, @Nonnull CharsetDecoder charsetDecoder) throws
         CharacterCodingException {
 
-        PercentDecoder decoder = new PercentDecoder(charsetDecoder, 16, 16);
+        PercentDecoder decoder = new PercentDecoder(charsetDecoder);
+        // reg names must be encoded UTF-8
+        PercentDecoder regNameDecoder;
+        if (charsetDecoder.charset().equals(UTF_8)) {
+            regNameDecoder = decoder;
+        } else {
+            regNameDecoder = new PercentDecoder(UTF_8.newDecoder());
+        }
 
         Integer port = url.getPort();
         if (port == -1) {
@@ -128,7 +135,7 @@ public final class UrlBuilder {
         }
 
         // TODO decode protocol and host
-        UrlBuilder ub = new UrlBuilder(url.getProtocol(), url.getHost(), port);
+        UrlBuilder ub = new UrlBuilder(url.getProtocol(), regNameDecoder.decode(url.getHost()), port);
 
         for (String pathChunk : url.getPath().split("/")) {
             if (pathChunk.equals("")) {

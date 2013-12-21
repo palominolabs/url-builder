@@ -31,6 +31,15 @@ final class PercentDecoder {
     private final StringBuilder outputBuf = new StringBuilder();
 
     /**
+     * Construct a new PercentDecoder with default buffer sizes.
+     *
+     * @param charsetDecoder Charset to decode bytes into chars with
+     */
+    PercentDecoder(@Nonnull CharsetDecoder charsetDecoder) {
+        this(charsetDecoder, 16, 16);
+    }
+
+    /**
      * @param charsetDecoder            Charset to decode bytes into chars with
      * @param initialEncodedByteBufSize Initial size of buffer that holds encoded bytes
      * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
