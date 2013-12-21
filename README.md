@@ -43,3 +43,7 @@ Ideally, the Java SDK would provide a good way to build properly encoded URLs. U
 URL encoding is also not something that can be done once you've formed a complete URL string. If your URL is already correctly encoded, you do not need to do anything. If it is not, it is impossible to parse it into its constituent parts for subsequent encoding. You must construct a url piece by piece, correctly encoding each piece as you go, to end up with a valid URL string. The encoding rules are also different for different parts of the URL (path, query param, etc.)
 
  Since the URLs that we use in practice for HTTP have somewhat different rules than "generic" URLs, UrlBuilder errs on the side of usefulness for HTTP-specific URLs. Notably, this means that '+' is percent-encoded to avoid being interpreted as a space.
+
+ # Building
+
+ Run `gradle build`. To see coverage, run `gradle cobertura` and look in `build/reports/cobertura/index.html`.

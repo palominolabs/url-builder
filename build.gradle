@@ -4,6 +4,7 @@ apply plugin: 'signing'
 
 apply plugin: 'errorprone'
 apply plugin: 'cobertura'
+apply plugin: 'findbugs'
 
 buildscript {
   repositories {
@@ -111,4 +112,9 @@ uploadArchives {
       }
     }
   }
+}
+
+findbugs {
+  // don't findbugs the tests
+  sourceSets = [sourceSets.main]
 }
