@@ -4,7 +4,9 @@ import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Test
 
-import static java.nio.charset.StandardCharsets.UTF_8
+import static com.google.common.base.Charsets.UTF_8
+import static java.lang.Character.isHighSurrogate
+import static java.lang.Character.isLowSurrogate
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.fail
 
@@ -113,7 +115,7 @@ class PercentDecoderTest {
       if (Character.isDefined(codePoint)) {
         int res = Character.toChars(codePoint, charBuf, 0)
 
-        if (res == CODE_POINT_IN_BMP && Character.isSurrogate(charBuf[0])) {
+        if (res == CODE_POINT_IN_BMP && (isHighSurrogate(charBuf[0]) || isLowSurrogate(charBuf[0]))) {
           // isDefined is true even if it's a standalone surrogate in the D800-DFFF range, but those are not legal
           // single unicode code units (that is, a single char)
           continue;

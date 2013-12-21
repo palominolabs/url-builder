@@ -22,7 +22,7 @@ import static com.palominolabs.http.url.UrlPercentEncoders.getMatrixEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getPathEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getQueryEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getRegNameEncoder;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * Builder for urls with url-encoding applied to path, query param, etc.
