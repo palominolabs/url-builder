@@ -227,7 +227,7 @@ public final class UrlBuilderTest {
     @Test
     public void testFromUrlWithEverything() throws MalformedURLException, CharacterCodingException {
         String orig =
-            "https://foo.bar.com:3333/foo/bar;mtx1=val1;mtx2=val2/seg3;m2=v2?q1=v1&q2=v2#zomg%20it's%20a%20fragment";
+            "https://foo.bar.com:3333/foo/ba%20r;mtx1=val1;mtx2=val%202/seg%203;m2=v2?q1=v1&q2=v%202#zomg%20it's%20a%20fragment";
         UrlBuilder ub = fromUrl(new URL(orig));
 
         assertUrlEquals(orig, ub.toUrlString());

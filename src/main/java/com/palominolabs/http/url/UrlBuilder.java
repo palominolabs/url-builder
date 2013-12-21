@@ -134,7 +134,7 @@ public final class UrlBuilder {
             port = null;
         }
 
-        // TODO decode protocol and host
+        // TODO decode protocol
         UrlBuilder ub = new UrlBuilder(url.getProtocol(), regNameDecoder.decode(url.getHost()), port);
 
         for (String pathChunk : url.getPath().split("/")) {
@@ -155,7 +155,7 @@ public final class UrlBuilder {
             if (pathChunkMatrixChunks.length > 1) {
                 // we found a ; so there are matrix params
 
-                ub.pathSegment(pathChunkMatrixChunks[0]);
+                ub.pathSegment(decoder.decode(pathChunkMatrixChunks[0]));
 
                 for (int i = 1; i < pathChunkMatrixChunks.length; i++) {
                     String[] mtxPair = pathChunkMatrixChunks[i].split("=");
@@ -166,12 +166,10 @@ public final class UrlBuilder {
 
                     String mtxName = mtxPair[0];
                     String mtxVal = mtxPair[1];
-                    // TODO decode
-                    ub.matrixParam(mtxName, mtxVal);
+                    ub.matrixParam(decoder.decode(mtxName), decoder.decode(mtxVal));
                 }
             } else if (pathChunkMatrixChunks.length == 1) {
                 // Just a segment by itself, possibly ending with a meaningless but harmless ';'
-                // TODO decode
                 ub.pathSegment(decoder.decode(pathChunkMatrixChunks[0]));
             }
 
@@ -184,13 +182,12 @@ public final class UrlBuilder {
             for (String queryChunk : q.split("&")) {
                 String[] queryParamChunks = queryChunk.split("=");
 
-                // TODO decode
-                ub.queryParam(queryParamChunks[0], queryParamChunks[1]);
+                ub.queryParam(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1]));
             }
         }
 
         if (url.getRef() != null) {
-            ub.fragment(url.getRef());
+            ub.fragment(decoder.decode(url.getRef()));
         }
 
         return ub;
