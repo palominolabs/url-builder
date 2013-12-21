@@ -4,9 +4,6 @@
 
 package com.palominolabs.http.url;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
@@ -15,14 +12,15 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.BitSet;
 
+import static java.lang.Character.isHighSurrogate;
+import static java.lang.Character.isLowSurrogate;
+
 /**
  * Encodes characters that aren't in the specified safe set as a sequence of %(hex) encoded bytes as determined by the
  * specified charset.
  */
 @NotThreadSafe
 public final class PercentEncoder {
-
-    private static final Logger logger = LoggerFactory.getLogger(PercentEncoder.class);
 
     /**
      * Amount to add to a lowercase ascii alpha char to make it an uppercase. Used for hex encoding.
@@ -84,14 +82,14 @@ public final class PercentEncoder {
                         i++;
                     } else {
                         // TODO what to do for high surrogate followed by non-low-surrogate?
-                        logger.warn(
-                            "Invalid UTF-16: Char " + (i - 1) + " was a high surrogate (\\u" + Integer
-                                .toHexString(c) + ", but char " + i + " was not a low surrogate (\\u" + Integer
-                                .toHexString(lowSurrogate));
+                        throw new IllegalArgumentException(
+                            "Invalid UTF-16: Char " + (i) + " is a high surrogate (\\u" + Integer
+                                .toHexString(c) + "), but char " + (i + 1) + " is not a low surrogate (\\u" + Integer
+                                .toHexString(lowSurrogate) + ")");
                     }
                 } else {
-                    // TODO what to do for high surrogoate with no low surrogate?
-                    logger.warn(
+                    // TODO what to do for high surrogate with no low surrogate?
+                    throw new IllegalArgumentException(
                         "Invalid UTF-16: The last character in the input string was a high surrogate (\\u" + Integer
                             .toHexString(c) + ")");
                 }
@@ -100,14 +98,6 @@ public final class PercentEncoder {
         }
 
         return stringBuilder.toString();
-    }
-
-    static boolean isHighSurrogate(char c) {
-        return c >= 0xD800 && c <= 0xDBFF;
-    }
-
-    static boolean isLowSurrogate(char c) {
-        return c >= 0xDC00 && c <= 0xDFFF;
     }
 
     /**
