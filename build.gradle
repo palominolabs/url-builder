@@ -3,6 +3,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 apply plugin: 'errorprone'
+apply plugin: 'cobertura'
 
 buildscript {
   repositories {
@@ -10,6 +11,7 @@ buildscript {
   }
   dependencies {
     classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.1'
+    classpath "net.saliman:gradle-cobertura-plugin:2.2.1"
   }
 }
 
