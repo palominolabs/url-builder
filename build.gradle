@@ -118,3 +118,9 @@ findbugs {
   // don't findbugs the tests
   sourceSets = [sourceSets.main]
 }
+tasks.withType(FindBugs) {
+  reports {
+    xml.enabled = false
+    html.enabled = true
+  }
+}
