@@ -1,5 +1,6 @@
 package com.palominolabs.http.url
 
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Test
 
@@ -48,52 +49,32 @@ class PercentDecoderTest {
   }
 
   @Test
+  @CompileStatic
   public void testRandomStrings() {
     PercentEncoder encoder = UrlPercentEncoders.getQueryEncoder()
     Random rand = new Random(44)
     char[] charBuf = new char[2]
     List<Integer> codePoints = []
-    StringBuilder orig = new StringBuilder()
+    StringBuilder buf = new StringBuilder()
 
     10000.times {
-      orig.setLength(0)
+      buf.setLength(0)
       codePoints.clear()
 
-      while (orig.length() < 1 + rand.nextInt(1000)) {
-        // pick something in the range of all 17 unicode planes
-        int codePoint = rand.nextInt(17 * 65536)
-        if (Character.isDefined(codePoint)) {
-          int res = Character.toChars(codePoint, charBuf, 0)
+      randString(buf, codePoints, charBuf, rand, 1 + rand.nextInt(1000))
 
-          if (res == CODE_POINT_IN_BMP && Character.isSurrogate(charBuf[0])) {
-            // isDefined is true even if it's a standalone surrogate in the D800-DFFF range, but those are not legal
-            // single unicode code units (that is, a single char)
-            continue;
-          }
-
-          orig.append(charBuf[0])
-          // whether it's a pair or not, we want the only char (or high surrogate)
-          codePoints.add codePoint
-          if (res == CODE_POINT_IN_SUPPLEMENTARY) {
-            // it's a surrogate pair, so we care about the second char
-            orig.append(charBuf[1])
-          }
-        }
-      }
-
-
-      byte[] origBytes = orig.toString().getBytes(UTF_8)
+      byte[] origBytes = buf.toString().getBytes(UTF_8)
       byte[] decodedBytes
       def codePointsHex = codePoints.collect({ int i -> Integer.toHexString(i) })
 
       try {
-        decodedBytes = decoder.decode(encoder.encode(orig.toString())).getBytes(UTF_8)
+        decodedBytes = decoder.decode(encoder.encode(buf.toString())).getBytes(UTF_8)
       } catch (IllegalArgumentException e) {
         List<String> charHex = new ArrayList<String>();
-        for (int i = 0; i < orig.toString().length(); i++) {
-          charHex.add(Integer.toHexString((int) orig.toString().charAt(i)));
+        for (int i = 0; i < buf.toString().length(); i++) {
+          charHex.add(Integer.toHexString((int) buf.toString().charAt(i)));
         }
-        fail("code points: " + codePoints + codePointsHex + ' chars ' + charHex + ' ' + e.message)
+        fail("code points: " + codePointsHex + ' chars ' + charHex + ' ' + e.message)
       }
 
       assertEquals("Code points: " + codePointsHex, toHex(origBytes),
@@ -101,7 +82,47 @@ class PercentDecoderTest {
     }
   }
 
-  static List<Integer> toHex(byte[] bytes) {
+  /**
+   * Generate a random string
+   * @param buf buffer to write into
+   * @param codePoints list of code points to write into
+   * @param charBuf char buf for temporary char wrangling (size 2)
+   * @param rand random source
+   * @param maxStrLength max string length
+   */
+  @CompileStatic
+  private static void randString(StringBuilder buf, List<Integer> codePoints, char[] charBuf, Random rand,
+                                 int length) {
+    while (buf.length() < length) {
+      // pick something in the range of all 17 unicode planes
+      int codePoint = rand.nextInt(17 * 65536)
+      if (Character.isDefined(codePoint)) {
+        int res = Character.toChars(codePoint, charBuf, 0)
+
+        if (res == CODE_POINT_IN_BMP && Character.isSurrogate(charBuf[0])) {
+          // isDefined is true even if it's a standalone surrogate in the D800-DFFF range, but those are not legal
+          // single unicode code units (that is, a single char)
+          continue;
+        }
+
+        buf.append(charBuf[0])
+        // whether it's a pair or not, we want the only char (or high surrogate)
+        codePoints.add codePoint
+        if (res == CODE_POINT_IN_SUPPLEMENTARY) {
+          // it's a surrogate pair, so we care about the second char
+          buf.append(charBuf[1])
+        }
+      }
+    }
+  }
+
+  /**
+   *
+   * @param bytes
+   * @return list of hex strings
+   */
+  @CompileStatic
+  static List<String> toHex(byte[] bytes) {
     def list = []
 
     for (byte b in bytes) {
