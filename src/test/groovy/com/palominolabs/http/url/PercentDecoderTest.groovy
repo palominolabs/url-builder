@@ -52,7 +52,11 @@ class PercentDecoderTest {
   @CompileStatic
   public void testRandomStrings() {
     PercentEncoder encoder = UrlPercentEncoders.getQueryEncoder()
-    Random rand = new Random(44)
+    Random rand = new Random()
+
+    def seed = rand.nextLong()
+    rand.setSeed(seed)
+
     char[] charBuf = new char[2]
     List<Integer> codePoints = []
     StringBuilder buf = new StringBuilder()
@@ -74,10 +78,10 @@ class PercentDecoderTest {
         for (int i = 0; i < buf.toString().length(); i++) {
           charHex.add(Integer.toHexString((int) buf.toString().charAt(i)));
         }
-        fail("code points: " + codePointsHex + ' chars ' + charHex + ' ' + e.message)
+        fail("seed: $seed code points: $codePointsHex chars $charHex $e.message")
       }
 
-      assertEquals("Code points: " + codePointsHex, toHex(origBytes),
+      assertEquals("Seed: $seed Code points: $codePointsHex", toHex(origBytes),
           toHex(decodedBytes))
     }
   }
