@@ -10,6 +10,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.net.URL;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -19,6 +22,7 @@ import static com.palominolabs.http.url.UrlPercentEncoders.getMatrixEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getPathEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getQueryEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getRegNameEncoder;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Builder for urls with url-encoding applied to path, query param, etc.
@@ -88,6 +92,125 @@ public final class UrlBuilder {
      */
     public static UrlBuilder forHost(@Nonnull String scheme, @Nonnull String host, int port) {
         return new UrlBuilder(scheme, host, port);
+    }
+
+    /**
+     * Calls {@link UrlBuilder#fromUrl(URL, CharsetDecoder)} with a UTF-8 CharsetDecoder.
+     *
+     * @param url url to initialize builder with
+     * @return a UrlBuilder containing the host, path, etc. from the url
+     * @throws CharacterCodingException if char decoding fails
+     * @see UrlBuilder#fromUrl(URL, CharsetDecoder)
+     */
+    @Nonnull
+    public static UrlBuilder fromUrl(@Nonnull URL url) throws CharacterCodingException {
+        return fromUrl(url, UTF_8.newDecoder());
+    }
+
+    /**
+     * Create a UrlBuilder initialized with the contents of a {@link URL}.
+     *
+     * @param url            url to initialize builder with
+     * @param charsetDecoder the decoder to decode encoded bytes with (except for reg names, which are always UTF-8)
+     * @return a UrlBuilder containing the host, path, etc. from the url
+     * @throws CharacterCodingException if char decoding fails
+     * @see UrlBuilder#fromUrl(URL, CharsetDecoder)
+     */
+    @Nonnull
+    public static UrlBuilder fromUrl(@Nonnull URL url, @Nonnull CharsetDecoder charsetDecoder) throws
+        CharacterCodingException {
+
+        PercentDecoder decoder = new PercentDecoder(charsetDecoder);
+        // reg names must be encoded UTF-8
+        PercentDecoder regNameDecoder;
+        if (charsetDecoder.charset().equals(UTF_8)) {
+            regNameDecoder = decoder;
+        } else {
+            regNameDecoder = new PercentDecoder(UTF_8.newDecoder());
+        }
+
+        Integer port = url.getPort();
+        if (port == -1) {
+            port = null;
+        }
+
+        // TODO decode protocol
+        UrlBuilder builder = new UrlBuilder(url.getProtocol(), regNameDecoder.decode(url.getHost()), port);
+
+        buildFromPath(builder, decoder, url);
+
+        buildFromQuery(builder, decoder, url);
+
+        if (url.getRef() != null) {
+            builder.fragment(decoder.decode(url.getRef()));
+        }
+
+        return builder;
+    }
+
+    /**
+     * Populate the path segments of a url builder from a url
+     *
+     * @param builder builder
+     * @param decoder decoder
+     * @param url     url
+     * @throws CharacterCodingException
+     */
+    private static void buildFromPath(UrlBuilder builder, PercentDecoder decoder, URL url) throws
+        CharacterCodingException {
+        for (String pathChunk : url.getPath().split("/")) {
+            if (pathChunk.equals("")) {
+                continue;
+            }
+
+            if (pathChunk.charAt(0) == ';') {
+                builder.pathSegment("");
+                // empty path segment, but matrix params
+                for (String matrixChunk : pathChunk.substring(1).split(";")) {
+                    buildFromMatrixParamChunk(decoder, builder, matrixChunk);
+                }
+
+                continue;
+            }
+
+            // otherwise, path chunk is non empty and does not start with a ';'
+
+            String[] matrixChunks = pathChunk.split(";");
+
+            // first chunk is always the path segment. If there is a trailing ; and no matrix params, the ; will
+            // not be included in the final url.
+            builder.pathSegment(decoder.decode(matrixChunks[0]));
+
+            // if there any other chunks, they're matrix param pairs
+            for (int i = 1; i < matrixChunks.length; i++) {
+                buildFromMatrixParamChunk(decoder, builder, matrixChunks[i]);
+            }
+        }
+    }
+
+    /**
+     * Populate a url builder based on the query of a url
+     *
+     * @param builder builder
+     * @param decoder decoder
+     * @param url     url
+     * @throws CharacterCodingException
+     */
+    private static void buildFromQuery(UrlBuilder builder, PercentDecoder decoder, URL url) throws
+        CharacterCodingException {
+        if (url.getQuery() != null) {
+            String q = url.getQuery();
+
+            for (String queryChunk : q.split("&")) {
+                String[] queryParamChunks = queryChunk.split("=");
+
+                if (queryParamChunks.length != 2) {
+                    throw new IllegalArgumentException("Malformed query param: <" + queryChunk + ">");
+                }
+
+                builder.queryParam(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1]));
+            }
+        }
     }
 
     /**
@@ -241,6 +364,19 @@ public final class UrlBuilder {
         return buf.toString();
     }
 
+    private static void buildFromMatrixParamChunk(PercentDecoder decoder, UrlBuilder ub, String pathMatrixChunk) throws
+        CharacterCodingException {
+        String[] mtxPair = pathMatrixChunk.split("=");
+        if (mtxPair.length != 2) {
+            throw new IllegalArgumentException(
+                "Malformed matrix param: <" + pathMatrixChunk + ">");
+        }
+
+        String mtxName = mtxPair[0];
+        String mtxVal = mtxPair[1];
+        ub.matrixParam(decoder.decode(mtxName), decoder.decode(mtxVal));
+    }
+
     /**
      * @param host original host string
      * @return host encoded as in RFC 3986 section 3.2.2
@@ -259,7 +395,7 @@ public final class UrlBuilder {
     /**
      * Bundle of a path segment name and any associated matrix params.
      */
-    static class PathSegment {
+    private static class PathSegment {
         private final String segment;
         private final List<Pair<String, String>> matrixParams = Lists.newArrayList();
 

@@ -5,14 +5,18 @@
 package com.palominolabs.http.url;
 
 import com.google.common.base.Throwables;
-import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.CharacterCodingException;
 
 import static com.palominolabs.http.url.UrlBuilder.forHost;
+import static com.palominolabs.http.url.UrlBuilder.fromUrl;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public final class UrlBuilderTest {
 
@@ -220,11 +224,136 @@ public final class UrlBuilderTest {
         assertUrlEquals("http://foo.com/seg1/seg2;m1=v1/seg3;m2=v2", ub.toUrlString());
     }
 
-    private static void assertUrlEquals(String expected, String actual) {
-        Assert.assertEquals(expected, actual);
+    @Test
+    public void testFromUrlWithEverything() {
+        String orig =
+            "https://foo.bar.com:3333/foo/ba%20r;mtx1=val1;mtx2=val%202/seg%203;m2=v2?q1=v1&q2=v%202#zomg%20it's%20a%20fragment";
+        assertUrlBuilderRoundtrip(orig);
+    }
+
+    @Test
+    public void testFromUrlWithEmptyPath() {
+        assertUrlBuilderRoundtrip("http://foo.com");
+    }
+
+    @Test
+    public void testFromUrlWithEmptyPathAndSlash() {
+        assertUrlBuilderRoundtrip("http://foo.com/", "http://foo.com");
+    }
+
+    @Test
+    public void testFromUrlWithPort() {
+        assertUrlBuilderRoundtrip("http://foo.com:1234");
+    }
+
+    @Test
+    public void testFromUrlWithEmptyPathSegent() {
+        assertUrlBuilderRoundtrip("http://foo.com/foo//", "http://foo.com/foo");
+    }
+
+    @Test
+    public void testFromUrlWithEncodedHost() {
+        assertUrlBuilderRoundtrip("http://f%20oo.com/bar");
+    }
+
+    @Test
+    public void testFromUrlWithEncodedPathSegment() {
+        assertUrlBuilderRoundtrip("http://foo.com/foo/b%20ar");
+    }
+
+    @Test
+    public void testFromUrlWithEncodedMatrixParam() {
+        assertUrlBuilderRoundtrip("http://foo.com/foo;m1=v1;m%202=v%202");
+    }
+
+    @Test
+    public void testFromUrlWithEncodedQueryParam() {
+        assertUrlBuilderRoundtrip("http://foo.com/foo?q%201=v%202&q2=v2");
+    }
+
+    @Test
+    public void testFromUrlWithEncodedFragment() {
+        assertUrlBuilderRoundtrip("http://foo.com/foo#b%20ar");
+    }
+
+    @Test
+    public void testFromUrlWithMalformedMatrixPair() throws MalformedURLException, CharacterCodingException {
         try {
-            Assert.assertEquals(expected, new URI(actual).toString());
+            fromUrl(new URL("http://foo.com/foo;m1=v1=v2"));
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Malformed matrix param: <m1=v1=v2>", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testFromUrlWithEmptyPathSegmentWithMatrixParams() {
+        assertUrlBuilderRoundtrip("http://foo.com/foo/;m1=v1");
+    }
+
+    @Test
+    public void testFromUrlWithEmptyPathWithMatrixParams() {
+        assertUrlBuilderRoundtrip("http://foo.com/;m1=v1");
+    }
+
+    @Test
+    public void testFromUrlWithEmptyPathWithMultipleMatrixParams() {
+        assertUrlBuilderRoundtrip("http://foo.com/;m1=v1;m2=v2");
+    }
+
+    @Test
+    public void testFromUrlWithPathSegmentEndingWithSemicolon() {
+        assertUrlBuilderRoundtrip("http://foo.com/foo;", "http://foo.com/foo");
+    }
+
+    @Test
+    public void testPercentDecodeInvalidPair() throws MalformedURLException, CharacterCodingException {
+        try {
+            fromUrl(new URL("http://foo.com/fo%2o"));
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid %-tuple <%2o>", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testFromUrlMalformedQueryParam() throws MalformedURLException, CharacterCodingException {
+        try {
+            fromUrl(new URL("http://foo.com/foo?q1=v1=v2"));
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Malformed query param: <q1=v1=v2>", e.getMessage());
+        }
+    }
+
+    private void assertUrlBuilderRoundtrip(String url) {
+        assertUrlBuilderRoundtrip(url, url);
+    }
+
+    /**
+     * @param origUrl  the url that will be used to create a URL
+     * @param finalUrl the URL string it should end up as
+     */
+    private void assertUrlBuilderRoundtrip(String origUrl, String finalUrl) {
+        try {
+            assertUrlEquals(finalUrl, fromUrl(new URL(origUrl)).toUrlString());
+        } catch (CharacterCodingException e) {
+            throw Throwables.propagate(e);
+        } catch (MalformedURLException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private static void assertUrlEquals(String expected, String actual) {
+        assertEquals(expected, actual);
+        try {
+            assertEquals(expected, new URI(actual).toString());
         } catch (URISyntaxException e) {
+            throw Throwables.propagate(e);
+        }
+        try {
+            assertEquals(expected, new URL(actual).toString());
+        } catch (MalformedURLException e) {
             throw Throwables.propagate(e);
         }
     }
