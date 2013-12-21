@@ -312,7 +312,7 @@ public final class UrlBuilderTest {
             fromUrl(new URL("http://foo.com/fo%2o"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("asdf", e.getMessage());
+            assertEquals("Invalid %-tuple <%2o>", e.getMessage());
         }
     }
 
