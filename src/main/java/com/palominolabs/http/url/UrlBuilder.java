@@ -17,12 +17,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static com.google.common.base.Charsets.UTF_8;
 import static com.palominolabs.http.url.UrlPercentEncoders.getFragmentEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getMatrixEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getPathEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getQueryEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getRegNameEncoder;
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * Builder for urls with url-encoding applied to path, query param, etc.
@@ -113,7 +113,8 @@ public final class UrlBuilder {
      * @param url            url to initialize builder with
      * @param charsetDecoder the decoder to decode encoded bytes with (except for reg names, which are always UTF-8)
      * @return a UrlBuilder containing the host, path, etc. from the url
-     * @throws CharacterCodingException if char decoding fails
+     * @throws CharacterCodingException if decoding percent-encoded bytes fails and charsetDecoder is configured to
+     *                                  report errors
      * @see UrlBuilder#fromUrl(URL, CharsetDecoder)
      */
     @Nonnull
@@ -314,7 +315,7 @@ public final class UrlBuilder {
      *
      * @return a well-formed URL string
      */
-    public String toUrlString() {
+    public String toUrlString() throws CharacterCodingException {
         StringBuilder buf = new StringBuilder();
 
         buf.append(scheme);
@@ -382,7 +383,7 @@ public final class UrlBuilder {
      * @return host encoded as in RFC 3986 section 3.2.2
      */
     @Nonnull
-    private String encodeHost(String host) {
+    private String encodeHost(String host) throws CharacterCodingException {
         // matching order: IP-literal, IPv4, reg-name
         if (IPV4_PATTERN.matcher(host).matches() || IPV6_PATTERN.matcher(host).matches()) {
             return host;

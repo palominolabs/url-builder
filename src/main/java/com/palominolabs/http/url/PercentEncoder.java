@@ -8,6 +8,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.BitSet;
@@ -29,7 +30,7 @@ public final class PercentEncoder {
 
     private final BitSet safeChars;
     private final CharsetEncoder encoder;
-    private final StringBuilder stringBuilder = new StringBuilder();
+    private final StringBuilder outputBuf = new StringBuilder();
 
     /**
      * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
@@ -46,12 +47,14 @@ public final class PercentEncoder {
      * @param input input string
      * @return the input string with every character that's not in safeChars turned into its byte representation via
      * encoder and then percent-encoded
+     * @throws CharacterCodingException if encoding fails and this instance's CharsetEncoder is configured to report
+     *                                  errors
      */
     @Nonnull
-    public String encode(@Nonnull CharSequence input) {
+    public String encode(@Nonnull CharSequence input) throws CharacterCodingException {
         // output buf will be at least as long as the input
-        stringBuilder.setLength(0);
-        stringBuilder.ensureCapacity(input.length());
+        outputBuf.setLength(0);
+        outputBuf.ensureCapacity(input.length());
 
         // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
 
@@ -65,7 +68,7 @@ public final class PercentEncoder {
             char c = input.charAt(i);
 
             if (safeChars.get(c)) {
-                stringBuilder.append(c);
+                outputBuf.append(c);
                 continue;
             }
 
@@ -81,36 +84,35 @@ public final class PercentEncoder {
                         charBuffer.append(lowSurrogate);
                         i++;
                     } else {
-                        // TODO what to do for high surrogate followed by non-low-surrogate?
                         throw new IllegalArgumentException(
                             "Invalid UTF-16: Char " + (i) + " is a high surrogate (\\u" + Integer
                                 .toHexString(c) + "), but char " + (i + 1) + " is not a low surrogate (\\u" + Integer
                                 .toHexString(lowSurrogate) + ")");
                     }
                 } else {
-                    // TODO what to do for high surrogate with no low surrogate?
                     throw new IllegalArgumentException(
                         "Invalid UTF-16: The last character in the input string was a high surrogate (\\u" + Integer
                             .toHexString(c) + ")");
                 }
             }
-            addEncodedChars(stringBuilder, byteBuffer, charBuffer, encoder);
+            addEncodedChars(outputBuf, byteBuffer, charBuffer, encoder);
         }
 
-        return stringBuilder.toString();
+        return outputBuf.toString();
     }
 
     /**
-     * Encode c to bytes as per charsetEncoder, then percent-encode those bytes into output.
+     * Encode charBuffer to bytes as per charsetEncoder, then percent-encode those bytes into output.
      *
      * @param output         where the encoded versions of the contents of charBuffer will be written
      * @param byteBuffer     encoded chars buffer in write state. Will be written to, flipped, and fully read from.
      * @param charBuffer     unencoded chars buffer containing one or two chars in write mode. Will be flipped to and
      *                       fully read from.
      * @param charsetEncoder encoder
+     * @throws CharacterCodingException if encoding fails and charsetEncoder is configured to report errors
      */
     private static void addEncodedChars(StringBuilder output, ByteBuffer byteBuffer, CharBuffer charBuffer,
-        CharsetEncoder charsetEncoder) {
+        CharsetEncoder charsetEncoder) throws CharacterCodingException {
         // need to read from the char buffer, which was most recently written to
         charBuffer.flip();
 
@@ -138,9 +140,12 @@ public final class PercentEncoder {
         }
     }
 
-    private static void checkResult(CoderResult result) {
+    private static void checkResult(CoderResult result) throws CharacterCodingException {
         if (result.isOverflow()) {
             throw new IllegalStateException("Somehow got byte buffer overflow");
+        }
+        if (result.isError()) {
+            result.throwException();
         }
     }
 

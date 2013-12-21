@@ -7,6 +7,7 @@ package com.palominolabs.http.url;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.charset.CharacterCodingException;
 import java.util.BitSet;
 
 import static com.google.common.base.Charsets.UTF_16BE;
@@ -39,7 +40,7 @@ public final class PercentEncoderTest {
     }
 
     @Test
-    public void testDoesntEncodeSafe() {
+    public void testDoesntEncodeSafe() throws CharacterCodingException {
         BitSet set = new BitSet();
         for (int i = 'a'; i <= 'z'; i++) {
             set.set(i);
@@ -51,25 +52,25 @@ public final class PercentEncoderTest {
     }
 
     @Test
-    public void testEncodeUtf8() {
+    public void testEncodeUtf8() throws CharacterCodingException {
         // 1 UTF-16 char (unicode snowman)
         assertEquals("snowman%E2%98%83", alnum.encode("snowman\u2603"));
     }
 
     @Test
-    public void testEncodeUtf8SurrogatePair() {
+    public void testEncodeUtf8SurrogatePair() throws CharacterCodingException {
         // musical G clef: 1d11e, has to be represented in surrogate pair form
         assertEquals("clef%F0%9D%84%9E", alnum.encode("clef\ud834\udd1e"));
     }
 
     @Test
-    public void testEncodeUtf16() {
+    public void testEncodeUtf16() throws CharacterCodingException {
         // 1 UTF-16 char (unicode snowman)
         assertEquals("snowman%26%03", alnum16.encode("snowman\u2603"));
     }
 
     @Test
-    public void testUrlEncodedUtf16SurrogatePair() {
+    public void testUrlEncodedUtf16SurrogatePair() throws CharacterCodingException {
         // musical G clef: 1d11e, has to be represented in surrogate pair form
         assertEquals("clef%D8%34%DD%1E", alnum16.encode("clef\ud834\udd1e"));
     }

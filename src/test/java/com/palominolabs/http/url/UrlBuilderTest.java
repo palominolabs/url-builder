@@ -21,24 +21,24 @@ import static org.junit.Assert.fail;
 public final class UrlBuilderTest {
 
     @Test
-    public void testNoUrlParts() {
+    public void testNoUrlParts() throws CharacterCodingException {
         assertUrlEquals("http://foo.com", forHost("http", "foo.com").toUrlString());
     }
 
     @Test
-    public void testWithPort() {
+    public void testWithPort() throws CharacterCodingException {
         assertUrlEquals("http://foo.com:33", forHost("http", "foo.com", 33).toUrlString());
     }
 
     @Test
-    public void testSimplePath() {
+    public void testSimplePath() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         ub.pathSegment("seg1").pathSegment("seg2");
         assertUrlEquals("http://foo.com/seg1/seg2", ub.toUrlString());
     }
 
     @Test
-    public void testPathWithReserved() {
+    public void testPathWithReserved() throws CharacterCodingException {
         // RFC 1738 S3.3
         UrlBuilder ub = forHost("http", "foo.com");
         ub.pathSegment("seg/;?ment").pathSegment("seg=&2");
@@ -46,21 +46,21 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testPathSegments() {
+    public void testPathSegments() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         ub.pathSegments("seg1", "seg2", "seg3");
         assertUrlEquals("http://foo.com/seg1/seg2/seg3", ub.toUrlString());
     }
 
     @Test
-    public void testMatrixWithoutPathHasLeadingSlash() {
+    public void testMatrixWithoutPathHasLeadingSlash() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         ub.matrixParam("foo", "bar");
         assertUrlEquals("http://foo.com/;foo=bar", ub.toUrlString());
     }
 
     @Test
-    public void testMatrixWithReserved() {
+    public void testMatrixWithReserved() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com")
             .pathSegment("foo")
             .matrixParam("foo", "bar")
@@ -70,7 +70,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testUrlEncodedPathSegmentUtf8() {
+    public void testUrlEncodedPathSegmentUtf8() throws CharacterCodingException {
         // 1 UTF-16 char
         UrlBuilder ub = forHost("http", "foo.com");
         ub.pathSegment("snowman").pathSegment("\u2603");
@@ -78,7 +78,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testUrlEncodedPathSegmentUtf8SurrogatePair() {
+    public void testUrlEncodedPathSegmentUtf8SurrogatePair() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         // musical G clef: 1d11e, has to be represented in surrogate pair form
         ub.pathSegment("clef").pathSegment("\ud834\udd1e");
@@ -86,7 +86,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testQueryParamNoPath() {
+    public void testQueryParamNoPath() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         ub.queryParam("foo", "bar");
         String s = ub.toUrlString();
@@ -94,7 +94,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testQueryParamsDuplicated() {
+    public void testQueryParamsDuplicated() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         ub.queryParam("foo", "bar");
         ub.queryParam("foo", "bar2");
@@ -104,7 +104,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testEncodeQueryParams() {
+    public void testEncodeQueryParams() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         ub.queryParam("foo", "bar&=#baz");
         ub.queryParam("foo", "bar?/2");
@@ -112,7 +112,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testEncodeQueryParamWithSpaceAndPlus() {
+    public void testEncodeQueryParamWithSpaceAndPlus() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         ub.queryParam("foo", "spa ce");
         ub.queryParam("fo+o", "plus+");
@@ -120,7 +120,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testPlusInVariousParts() {
+    public void testPlusInVariousParts() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
 
         ub.pathSegment("has+plus")
@@ -132,7 +132,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testFragment() {
+    public void testFragment() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com");
         ub.queryParam("foo", "bar");
         ub.fragment("#frag/?");
@@ -140,7 +140,7 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testAllParts() {
+    public void testAllParts() throws CharacterCodingException {
         UrlBuilder ub = forHost("https", "foo.bar.com", 3333);
         ub.pathSegment("foo");
         ub.pathSegment("bar");
@@ -155,50 +155,50 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testIPv4Literal() {
+    public void testIPv4Literal() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "127.0.0.1");
         assertUrlEquals("http://127.0.0.1", ub.toUrlString());
     }
 
     @Test
-    public void testBadIPv4LiteralDoesntChoke() {
+    public void testBadIPv4LiteralDoesntChoke() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "300.100.50.1");
         assertUrlEquals("http://300.100.50.1", ub.toUrlString());
     }
 
     @Test
-    public void testIPv6LiteralLocalhost() {
+    public void testIPv6LiteralLocalhost() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "[::1]");
         assertUrlEquals("http://[::1]", ub.toUrlString());
     }
 
     @Test
-    public void testIPv6Literal() {
+    public void testIPv6Literal() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "[2001:db8:85a3::8a2e:370:7334]");
         assertUrlEquals("http://[2001:db8:85a3::8a2e:370:7334]", ub.toUrlString());
     }
 
     @Test
-    public void testEncodedRegNameSingleByte() {
+    public void testEncodedRegNameSingleByte() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "host?name;");
         assertUrlEquals("http://host%3Fname;", ub.toUrlString());
     }
 
     @Test
-    public void testEncodedRegNameMultiByte() {
+    public void testEncodedRegNameMultiByte() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "snow\u2603man");
         assertUrlEquals("http://snow%E2%98%83man", ub.toUrlString());
     }
 
     @Test
-    public void testForceTrailingSlash() {
+    public void testForceTrailingSlash() throws CharacterCodingException {
         UrlBuilder ub = forHost("https", "foo.com").forceTrailingSlash().pathSegments("a", "b", "c");
 
         assertUrlEquals("https://foo.com/a/b/c/", ub.toUrlString());
     }
 
     @Test
-    public void testForceTrailingSlashWithQueryParams() {
+    public void testForceTrailingSlashWithQueryParams() throws CharacterCodingException {
         UrlBuilder ub =
             forHost("https", "foo.com").forceTrailingSlash().pathSegments("a", "b", "c").queryParam("foo", "bar");
 
@@ -206,14 +206,14 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testForceTrailingSlashNoPathSegmentsWithMatrixParams() {
+    public void testForceTrailingSlashNoPathSegmentsWithMatrixParams() throws CharacterCodingException {
         UrlBuilder ub = forHost("https", "foo.com").forceTrailingSlash().matrixParam("m1", "v1");
 
         assertUrlEquals("https://foo.com/;m1=v1/", ub.toUrlString());
     }
 
     @Test
-    public void testIntermingledMatrixParamsAndPathSegments() {
+    public void testIntermingledMatrixParamsAndPathSegments() throws CharacterCodingException {
 
         UrlBuilder ub = forHost("http", "foo.com")
             .pathSegments("seg1", "seg2")
