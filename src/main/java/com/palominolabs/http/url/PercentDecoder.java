@@ -89,6 +89,10 @@ final class PercentDecoder {
             int msBits = Character.digit(input.charAt(++i), 16);
             int lsBits = Character.digit(input.charAt(++i), 16);
 
+            if (msBits == -1 || lsBits == -1) {
+                throw new IllegalArgumentException("Invalid %-tuple <" + input.subSequence(i - 2, i + 1) + ">");
+            }
+
             msBits <<= 4;
             msBits |= lsBits;
 

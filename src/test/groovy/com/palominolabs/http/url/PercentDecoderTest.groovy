@@ -49,6 +49,16 @@ class PercentDecoderTest {
   }
 
   @Test
+  public void testInvalidHex() {
+    try {
+      decoder.decode('%xz')
+      fail()
+    } catch (IllegalArgumentException e) {
+      assert 'Invalid %-tuple <%xz>' == e.message
+    }
+  }
+
+  @Test
   @CompileStatic
   public void testRandomStrings() {
     PercentEncoder encoder = UrlPercentEncoders.getQueryEncoder()
