@@ -11,11 +11,14 @@ import java.nio.charset.CoderResult;
 import static java.nio.charset.CoderResult.OVERFLOW;
 import static java.nio.charset.CoderResult.UNDERFLOW;
 
+/**
+ * Decodes percent-encoded (%XX) Unicode text.
+ */
 @NotThreadSafe
-final class PercentDecoder {
+public final class PercentDecoder {
 
     /**
-     * bytes represented by the current sequence of %-triples
+     * bytes represented by the current sequence of %-triples. Resized as needed.
      */
     private ByteBuffer encodedBuf;
 
@@ -34,8 +37,9 @@ final class PercentDecoder {
      * Construct a new PercentDecoder with default buffer sizes.
      *
      * @param charsetDecoder Charset to decode bytes into chars with
+     * @see PercentDecoder#PercentDecoder(CharsetDecoder, int, int)
      */
-    PercentDecoder(@Nonnull CharsetDecoder charsetDecoder) {
+    public PercentDecoder(@Nonnull CharsetDecoder charsetDecoder) {
         this(charsetDecoder, 16, 16);
     }
 
@@ -44,19 +48,21 @@ final class PercentDecoder {
      * @param initialEncodedByteBufSize Initial size of buffer that holds encoded bytes
      * @param decodedCharBufSize        Size of buffer that encoded bytes are decoded into
      */
-    PercentDecoder(@Nonnull CharsetDecoder charsetDecoder, int initialEncodedByteBufSize, int decodedCharBufSize) {
+    public PercentDecoder(@Nonnull CharsetDecoder charsetDecoder, int initialEncodedByteBufSize,
+        int decodedCharBufSize) {
         encodedBuf = ByteBuffer.allocate(initialEncodedByteBufSize);
         decodedCharBuf = CharBuffer.allocate(decodedCharBufSize);
         decoder = charsetDecoder;
     }
 
     /**
-     * @param input Input with %-encoded representation of characters in this instance's configured character set
+     * @param input Input with %-encoded representation of characters in this instance's configured character set, e.g.
+     *              "%20" for a space character
      * @return Corresponding string with %-encoded data decoded and converted to their corresponding characters
      * @throws CharacterCodingException if character decoding fails
      */
     @Nonnull
-    String decode(@Nonnull CharSequence input) throws CharacterCodingException {
+    public String decode(@Nonnull CharSequence input) throws CharacterCodingException {
         outputBuf.setLength(0);
         // this is almost always an underestimate of the size needed:
         // only a 4-byte encoding (which is 12 characters input) would case this to be an overestimate

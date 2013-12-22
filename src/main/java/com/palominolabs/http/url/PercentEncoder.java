@@ -17,8 +17,10 @@ import static java.lang.Character.isHighSurrogate;
 import static java.lang.Character.isLowSurrogate;
 
 /**
- * Encodes characters that aren't in the specified safe set as a sequence of %(hex) encoded bytes as determined by the
- * specified charset.
+ * Encodes unsafe characters as a sequence of %XX hex-encoded bytes.
+ *
+ * This is typically done when encoding components of URLs. See {@link UrlPercentEncoders} for pre-configured
+ * PercentEncoder instances.
  */
 @NotThreadSafe
 public final class PercentEncoder {
@@ -45,8 +47,8 @@ public final class PercentEncoder {
 
     /**
      * @param input input string
-     * @return the input string with every character that's not in safeChars turned into its byte representation via
-     * encoder and then percent-encoded
+     * @return the input string with every character that's not in safeChars turned into its byte representation via the
+     * instance's encoder and then percent-encoded
      * @throws CharacterCodingException if encoding fails and this instance's CharsetEncoder is configured to report
      *                                  errors
      */
