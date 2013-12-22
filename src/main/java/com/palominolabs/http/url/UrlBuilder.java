@@ -249,6 +249,7 @@ public final class UrlBuilder {
      * Encode the current builder state into a URL string.
      *
      * @return a well-formed URL string
+     * @throws CharacterCodingException if character encoding fails and the encoder is configured to report errors
      */
     public String toUrlString() throws CharacterCodingException {
         StringBuilder buf = new StringBuilder();
