@@ -71,6 +71,19 @@ public final class UrlBuilder {
     private boolean forceTrailingSlash = false;
 
     /**
+     * Create a URL with UTF-8 encoding.
+     *
+     * @param scheme scheme (e.g. http)
+     * @param host   host (e.g. foo.com or 1.2.3.4 or [::1])
+     * @param port   null or a positive integer
+     */
+    private UrlBuilder(@Nonnull String scheme, @Nonnull String host, @Nullable Integer port) {
+        this.host = host;
+        this.scheme = scheme;
+        this.port = port;
+    }
+
+    /**
      * Create a URL with an null port and UTF-8 encoding.
      *
      * @param scheme scheme (e.g. http)
@@ -147,84 +160,6 @@ public final class UrlBuilder {
         }
 
         return builder;
-    }
-
-    /**
-     * Populate the path segments of a url builder from a url
-     *
-     * @param builder builder
-     * @param decoder decoder
-     * @param url     url
-     * @throws CharacterCodingException
-     */
-    private static void buildFromPath(UrlBuilder builder, PercentDecoder decoder, URL url) throws
-        CharacterCodingException {
-        for (String pathChunk : url.getPath().split("/")) {
-            if (pathChunk.equals("")) {
-                continue;
-            }
-
-            if (pathChunk.charAt(0) == ';') {
-                builder.pathSegment("");
-                // empty path segment, but matrix params
-                for (String matrixChunk : pathChunk.substring(1).split(";")) {
-                    buildFromMatrixParamChunk(decoder, builder, matrixChunk);
-                }
-
-                continue;
-            }
-
-            // otherwise, path chunk is non empty and does not start with a ';'
-
-            String[] matrixChunks = pathChunk.split(";");
-
-            // first chunk is always the path segment. If there is a trailing ; and no matrix params, the ; will
-            // not be included in the final url.
-            builder.pathSegment(decoder.decode(matrixChunks[0]));
-
-            // if there any other chunks, they're matrix param pairs
-            for (int i = 1; i < matrixChunks.length; i++) {
-                buildFromMatrixParamChunk(decoder, builder, matrixChunks[i]);
-            }
-        }
-    }
-
-    /**
-     * Populate a url builder based on the query of a url
-     *
-     * @param builder builder
-     * @param decoder decoder
-     * @param url     url
-     * @throws CharacterCodingException
-     */
-    private static void buildFromQuery(UrlBuilder builder, PercentDecoder decoder, URL url) throws
-        CharacterCodingException {
-        if (url.getQuery() != null) {
-            String q = url.getQuery();
-
-            for (String queryChunk : q.split("&")) {
-                String[] queryParamChunks = queryChunk.split("=");
-
-                if (queryParamChunks.length != 2) {
-                    throw new IllegalArgumentException("Malformed query param: <" + queryChunk + ">");
-                }
-
-                builder.queryParam(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1]));
-            }
-        }
-    }
-
-    /**
-     * Create a URL with UTF-8 encoding.
-     *
-     * @param scheme scheme (e.g. http)
-     * @param host   host (e.g. foo.com or 1.2.3.4 or [::1])
-     * @param port   null or a positive integer
-     */
-    private UrlBuilder(@Nonnull String scheme, @Nonnull String host, @Nullable Integer port) {
-        this.host = host;
-        this.scheme = scheme;
-        this.port = port;
     }
 
     /**
@@ -363,6 +298,71 @@ public final class UrlBuilder {
         }
 
         return buf.toString();
+    }
+
+    /**
+     * Populate a url builder based on the query of a url
+     *
+     * @param builder builder
+     * @param decoder decoder
+     * @param url     url
+     * @throws CharacterCodingException
+     */
+    private static void buildFromQuery(UrlBuilder builder, PercentDecoder decoder, URL url) throws
+        CharacterCodingException {
+        if (url.getQuery() != null) {
+            String q = url.getQuery();
+
+            for (String queryChunk : q.split("&")) {
+                String[] queryParamChunks = queryChunk.split("=");
+
+                if (queryParamChunks.length != 2) {
+                    throw new IllegalArgumentException("Malformed query param: <" + queryChunk + ">");
+                }
+
+                builder.queryParam(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1]));
+            }
+        }
+    }
+
+    /**
+     * Populate the path segments of a url builder from a url
+     *
+     * @param builder builder
+     * @param decoder decoder
+     * @param url     url
+     * @throws CharacterCodingException
+     */
+    private static void buildFromPath(UrlBuilder builder, PercentDecoder decoder, URL url) throws
+        CharacterCodingException {
+        for (String pathChunk : url.getPath().split("/")) {
+            if (pathChunk.equals("")) {
+                continue;
+            }
+
+            if (pathChunk.charAt(0) == ';') {
+                builder.pathSegment("");
+                // empty path segment, but matrix params
+                for (String matrixChunk : pathChunk.substring(1).split(";")) {
+                    buildFromMatrixParamChunk(decoder, builder, matrixChunk);
+                }
+
+                continue;
+            }
+
+            // otherwise, path chunk is non empty and does not start with a ';'
+
+            String[] matrixChunks = pathChunk.split(";");
+
+            // first chunk is always the path segment. If there is a trailing ; and no matrix params, the ; will
+            // not be included in the final url.
+            builder.pathSegment(decoder.decode(matrixChunks[0]));
+
+            // if there any other chunks, they're matrix param pairs
+            for (int i = 1; i < matrixChunks.length; i++) {
+                buildFromMatrixParamChunk(decoder, builder, matrixChunks[i]);
+            }
+        }
     }
 
     private static void buildFromMatrixParamChunk(PercentDecoder decoder, UrlBuilder ub, String pathMatrixChunk) throws
