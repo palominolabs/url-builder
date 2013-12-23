@@ -37,6 +37,8 @@ public final class PercentEncoder {
      * Pre-allocate a string handler to make the common case of encoding to a string faster
      */
     private final StringBuilderPercentEncoderHandler stringHandler = new StringBuilderPercentEncoderHandler();
+    private final ByteBuffer byteBuffer;
+    private final CharBuffer charBuffer;
 
     /**
      * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
@@ -47,15 +49,19 @@ public final class PercentEncoder {
     public PercentEncoder(@Nonnull BitSet safeChars, @Nonnull CharsetEncoder charsetEncoder) {
         this.safeChars = safeChars;
         this.encoder = charsetEncoder;
+
+        // why is this a float? sigh.
+        int maxBytes = 1 + (int) encoder.maxBytesPerChar();
+        // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
+        byteBuffer = ByteBuffer.allocate(maxBytes * 2);
+        charBuffer = CharBuffer.allocate(2);
     }
 
     public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
         MalformedInputException, UnmappableCharacterException {
-        // why is this a float? sigh.
-        int maxBytes = 1 + (int) encoder.maxBytesPerChar();
-        // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
-        ByteBuffer byteBuffer = ByteBuffer.allocate(maxBytes * 2);
-        CharBuffer charBuffer = CharBuffer.allocate(2);
+
+        byteBuffer.clear();
+        charBuffer.clear();
 
         for (int i = 0; i < input.length(); i++) {
 
