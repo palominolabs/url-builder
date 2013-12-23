@@ -8,9 +8,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.MalformedInputException;
+import java.nio.charset.UnmappableCharacterException;
 import java.util.BitSet;
 
 import static java.lang.Character.isHighSurrogate;
@@ -49,11 +50,12 @@ public final class PercentEncoder {
      * @param input input string
      * @return the input string with every character that's not in safeChars turned into its byte representation via the
      * instance's encoder and then percent-encoded
-     * @throws CharacterCodingException if encoding fails and this instance's CharsetEncoder is configured to report
-     *                                  errors
+     * @throws MalformedInputException      if encoder is configured to report errors and malformed input is detected
+     * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
+     *                                      detected
      */
     @Nonnull
-    public String encode(@Nonnull CharSequence input) throws CharacterCodingException {
+    public String encode(@Nonnull CharSequence input) throws MalformedInputException, UnmappableCharacterException {
         // output buf will be at least as long as the input
         outputBuf.setLength(0);
         outputBuf.ensureCapacity(input.length());
@@ -111,10 +113,9 @@ public final class PercentEncoder {
      * @param charBuffer     unencoded chars buffer containing one or two chars in write mode. Will be flipped to and
      *                       fully read from.
      * @param charsetEncoder encoder
-     * @throws CharacterCodingException if encoding fails and charsetEncoder is configured to report errors
      */
     private static void addEncodedChars(StringBuilder output, ByteBuffer byteBuffer, CharBuffer charBuffer,
-        CharsetEncoder charsetEncoder) throws CharacterCodingException {
+        CharsetEncoder charsetEncoder) throws MalformedInputException, UnmappableCharacterException {
         // need to read from the char buffer, which was most recently written to
         charBuffer.flip();
 
@@ -142,12 +143,21 @@ public final class PercentEncoder {
         }
     }
 
-    private static void checkResult(CoderResult result) throws CharacterCodingException {
+    /**
+     * @param result result to check
+     * @throws IllegalStateException        if result is overflow
+     * @throws MalformedInputException      if result represents malformed input
+     * @throws UnmappableCharacterException if result represents an unmappable character
+     */
+    private static void checkResult(CoderResult result) throws MalformedInputException, UnmappableCharacterException {
         if (result.isOverflow()) {
-            throw new IllegalStateException("Somehow got byte buffer overflow");
+            throw new IllegalStateException("Byte buffer overflow; this should not happen.");
         }
-        if (result.isError()) {
-            result.throwException();
+        if (result.isMalformed()) {
+            throw new MalformedInputException(result.length());
+        }
+        if (result.isUnmappable()) {
+            throw new UnmappableCharacterException(result.length());
         }
     }
 

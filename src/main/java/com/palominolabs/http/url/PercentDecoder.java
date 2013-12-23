@@ -4,9 +4,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.MalformedInputException;
+import java.nio.charset.UnmappableCharacterException;
 
 import static java.nio.charset.CoderResult.OVERFLOW;
 import static java.nio.charset.CoderResult.UNDERFLOW;
@@ -59,10 +60,12 @@ public final class PercentDecoder {
      * @param input Input with %-encoded representation of characters in this instance's configured character set, e.g.
      *              "%20" for a space character
      * @return Corresponding string with %-encoded data decoded and converted to their corresponding characters
-     * @throws CharacterCodingException if character decoding fails
+     * @throws MalformedInputException      if decoder is configured to report errors and malformed input is detected
+     * @throws UnmappableCharacterException if decoder is configured to report errors and an unmappable character is
+     *                                      detected
      */
     @Nonnull
-    public String decode(@Nonnull CharSequence input) throws CharacterCodingException {
+    public String decode(@Nonnull CharSequence input) throws MalformedInputException, UnmappableCharacterException {
         outputBuf.setLength(0);
         // this is almost always an underestimate of the size needed:
         // only a 4-byte encoding (which is 12 characters input) would case this to be an overestimate
@@ -114,7 +117,7 @@ public final class PercentDecoder {
     /**
      * Decode any buffered encoded bytes and write them to the output buf.
      */
-    private void handleEncodedBytes() throws CharacterCodingException {
+    private void handleEncodedBytes() throws MalformedInputException, UnmappableCharacterException {
         if (encodedBuf.position() == 0) {
             // nothing to do
             return;
@@ -156,10 +159,8 @@ public final class PercentDecoder {
 
     /**
      * Must only be called when the input encoded bytes buffer is empty
-     *
-     * @throws CharacterCodingException
      */
-    private void flush() throws CharacterCodingException {
+    private void flush() throws MalformedInputException, UnmappableCharacterException {
         CoderResult coderResult;
         decodedCharBuf.clear();
 
@@ -178,13 +179,16 @@ public final class PercentDecoder {
      * CharacterCodingException.
      *
      * @param coderResult result to check
-     * @throws CharacterCodingException
+     * @throws MalformedInputException      if result represents malformed input
+     * @throws UnmappableCharacterException if result represents an unmappable character
      */
-    private void throwIfError(CoderResult coderResult) throws CharacterCodingException {
-        if (coderResult.isError()) {
-            coderResult.throwException();
+    private void throwIfError(CoderResult coderResult) throws MalformedInputException, UnmappableCharacterException {
+        if (coderResult.isMalformed()) {
+            throw new MalformedInputException(coderResult.length());
         }
-    }
+        if (coderResult.isUnmappable()) {
+            throw new UnmappableCharacterException(coderResult.length());
+        }    }
 
     /**
      * Flip the decoded char buf and append it to the string bug
