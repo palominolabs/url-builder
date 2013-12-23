@@ -61,7 +61,6 @@ public final class PercentEncoder {
     public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
         MalformedInputException, UnmappableCharacterException {
 
-        byteBuffer.clear();
         charBuffer.clear();
 
         for (int i = 0; i < input.length(); i++) {
@@ -70,7 +69,7 @@ public final class PercentEncoder {
 
             if (safeChars.get(c)) {
                 if (charBuffer.position() > 0) {
-                    addEncodedChars(handler, byteBuffer, charBuffer, encoder);
+                    addEncodedChars(handler);
                 }
                 handler.onEncodedChar(c);
                 continue;
@@ -100,11 +99,11 @@ public final class PercentEncoder {
 
             if (charBuffer.remaining() < 2) {
                 // flush if we could fill up next loop
-                addEncodedChars(handler, byteBuffer, charBuffer, encoder);
+                addEncodedChars(handler);
             }
         }
 
-        addEncodedChars(handler, byteBuffer, charBuffer, encoder);
+        addEncodedChars(handler);
     }
 
     /**
@@ -126,23 +125,21 @@ public final class PercentEncoder {
     /**
      * Encode charBuffer to bytes as per charsetEncoder, then percent-encode those bytes into output.
      *
-     * @param handler        where the encoded versions of the contents of charBuffer will be written
-     * @param byteBuffer     encoded chars buffer in write state. Will be cleared, flipped, and fully read from.
-     * @param charBuffer     unencoded chars buffer containing one or two chars in write mode. Will be read from and
-     *                       cleared.
-     * @param charsetEncoder encoder
+     * Side effects: charBuffer will be read from and cleared. byteBuffer will be cleared and written to.
+     *
+     * @param handler where the encoded versions of the contents of charBuffer will be written
      */
-    private static void addEncodedChars(PercentEncoderHandler handler, ByteBuffer byteBuffer, CharBuffer charBuffer,
-        CharsetEncoder charsetEncoder) throws MalformedInputException, UnmappableCharacterException {
+    private void addEncodedChars(PercentEncoderHandler handler) throws MalformedInputException,
+        UnmappableCharacterException {
         // need to read from the char buffer, which was most recently written to
         charBuffer.flip();
 
         byteBuffer.clear();
 
-        charsetEncoder.reset();
-        CoderResult result = charsetEncoder.encode(charBuffer, byteBuffer, true);
+        encoder.reset();
+        CoderResult result = encoder.encode(charBuffer, byteBuffer, true);
         checkResult(result);
-        result = charsetEncoder.flush(byteBuffer);
+        result = encoder.flush(byteBuffer);
         checkResult(result);
 
         // read contents of bytebuffer
