@@ -59,6 +59,11 @@ public final class PercentEncoderTest {
     }
 
     @Test
+    public void testSafeInBetweenEncoded() throws MalformedInputException, UnmappableCharacterException {
+        assertEquals("%20abc%20", alnum.encode(" abc "));
+    }
+
+    @Test
     public void testEncodeUtf8() throws CharacterCodingException {
         // 1 UTF-16 char (unicode snowman)
         assertEquals("snowman%E2%98%83", alnum.encode("snowman\u2603"));

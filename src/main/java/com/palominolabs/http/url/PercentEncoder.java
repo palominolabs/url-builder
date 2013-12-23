@@ -37,8 +37,9 @@ public final class PercentEncoder {
      * Pre-allocate a string handler to make the common case of encoding to a string faster
      */
     private final StringBuilderPercentEncoderHandler stringHandler = new StringBuilderPercentEncoderHandler();
-    private final ByteBuffer byteBuffer;
-    private final CharBuffer charBuffer;
+    private final ByteBuffer encodedBytes;
+    private final CharBuffer unsafeCharsToEncode;
+    private final CharBuffer outputBuf;
 
     /**
      * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
@@ -54,35 +55,36 @@ public final class PercentEncoder {
         int maxBytesPerChar = 1 + (int) encoder.maxBytesPerChar();
         // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
         int minEncodeLoopsPerBuf = 16;
-        byteBuffer = ByteBuffer.allocate(maxBytesPerChar * 2 * minEncodeLoopsPerBuf);
-        charBuffer = CharBuffer.allocate(2 * minEncodeLoopsPerBuf);
+        encodedBytes = ByteBuffer.allocate(maxBytesPerChar * 2 * minEncodeLoopsPerBuf);
+        unsafeCharsToEncode = CharBuffer.allocate(2 * minEncodeLoopsPerBuf);
+        outputBuf = CharBuffer.allocate(64);
     }
 
     public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
         MalformedInputException, UnmappableCharacterException {
 
-        charBuffer.clear();
+        unsafeCharsToEncode.clear();
 
         for (int i = 0; i < input.length(); i++) {
 
             char c = input.charAt(i);
 
             if (safeChars.get(c)) {
-                if (charBuffer.position() > 0) {
-                    addEncodedChars(handler);
+                if (haveUnsafeCharsBuffered()) {
+                    flushUnsafeCharBuffer(handler);
                 }
-                handler.onEncodedChar(c);
+                addOutput(handler, c);
                 continue;
             }
 
             // not a safe char
-            charBuffer.append(c);
+            unsafeCharsToEncode.append(c);
             if (isHighSurrogate(c)) {
                 if (input.length() > i + 1) {
                     // get the low surrogate as well
                     char lowSurrogate = input.charAt(i + 1);
                     if (isLowSurrogate(lowSurrogate)) {
-                        charBuffer.append(lowSurrogate);
+                        unsafeCharsToEncode.append(lowSurrogate);
                         i++;
                     } else {
                         throw new IllegalArgumentException(
@@ -97,13 +99,14 @@ public final class PercentEncoder {
                 }
             }
 
-            if (charBuffer.remaining() < 2) {
+            if (unsafeCharsToEncode.remaining() < 2) {
                 // flush if we could fill up next loop
-                addEncodedChars(handler);
+                flushUnsafeCharBuffer(handler);
             }
         }
 
-        addEncodedChars(handler);
+        flushUnsafeCharBuffer(handler);
+        flushOutputBuf(handler);
     }
 
     /**
@@ -122,44 +125,86 @@ public final class PercentEncoder {
         return stringHandler.getContents();
     }
 
+    private boolean haveUnsafeCharsBuffered() {
+        return unsafeCharsToEncode.position() > 0;
+    }
+
     /**
-     * Encode charBuffer to bytes as per charsetEncoder, then percent-encode those bytes into output.
+     * Add c to output buffer, flushing to handler if needed.
      *
-     * Side effects: charBuffer will be read from and cleared. byteBuffer will be cleared and written to.
-     *
-     * @param handler where the encoded versions of the contents of charBuffer will be written
+     * @param handler handler to flush to, if needed
+     * @param c       char to append
      */
-    private void addEncodedChars(PercentEncoderHandler handler) throws MalformedInputException,
+    private void addOutput(PercentEncoderHandler handler, char c) {
+        if (!outputBuf.hasRemaining()) {
+            flushOutputBuf(handler);
+        }
+
+        outputBuf.append(c);
+    }
+
+    /**
+     * Add a byte to output buffer after hex encoding,  flushing to handler if needed.
+     *
+     * @param handler handler to flush to, if needed
+     * @param b       byte to hex encode and append
+     */
+    private void addOutput(PercentEncoderHandler handler, byte b) {
+        if (outputBuf.remaining() < 3) {
+            flushOutputBuf(handler);
+        }
+
+        int msbits = (b >> 4) & 0xF;
+        int lsbits = b & 0xF;
+
+        char msbitsChar = Character.forDigit(msbits, 16);
+        char lsbitsChar = Character.forDigit(lsbits, 16);
+
+        outputBuf.append('%');
+        outputBuf.append(capitalizeIfLetter(msbitsChar));
+        outputBuf.append(capitalizeIfLetter(lsbitsChar));
+    }
+
+    /**
+     * Call the output handler and clear the output buffer.
+     *
+     * @param handler handler to call
+     */
+    private void flushOutputBuf(PercentEncoderHandler handler) {
+        outputBuf.flip();
+        handler.onOutputChars(outputBuf);
+        outputBuf.clear();
+    }
+
+    /**
+     * Encode unsafeCharsToEncode to bytes as per charsetEncoder, then percent-encode those bytes into output.
+     *
+     * Side effects: unsafeCharsToEncode will be read from and cleared. encodedBytes will be cleared and written to.
+     *
+     * @param handler where the encoded versions of the contents of unsafeCharsToEncode will be written
+     */
+    private void flushUnsafeCharBuffer(PercentEncoderHandler handler) throws MalformedInputException,
         UnmappableCharacterException {
         // need to read from the char buffer, which was most recently written to
-        charBuffer.flip();
+        unsafeCharsToEncode.flip();
 
-        byteBuffer.clear();
+        encodedBytes.clear();
 
         encoder.reset();
-        CoderResult result = encoder.encode(charBuffer, byteBuffer, true);
+        CoderResult result = encoder.encode(unsafeCharsToEncode, encodedBytes, true);
         checkResult(result);
-        result = encoder.flush(byteBuffer);
+        result = encoder.flush(encodedBytes);
         checkResult(result);
 
         // read contents of bytebuffer
-        byteBuffer.flip();
+        encodedBytes.flip();
 
-        while (byteBuffer.hasRemaining()) {
-            byte b = byteBuffer.get();
-
-            int msbits = (b >> 4) & 0xF;
-            int lsbits = b & 0xF;
-
-            char msbitsChar = Character.forDigit(msbits, 16);
-            char lsbitsChar = Character.forDigit(lsbits, 16);
-
-            handler.onEncodedChar('%');
-            handler.onEncodedChar(capitalizeIfLetter(msbitsChar));
-            handler.onEncodedChar(capitalizeIfLetter(lsbitsChar));
+        while (encodedBytes.hasRemaining()) {
+            byte b = encodedBytes.get();
+            addOutput(handler, b);
         }
 
-        charBuffer.clear();
+        unsafeCharsToEncode.clear();
     }
 
     /**
