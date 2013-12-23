@@ -148,7 +148,6 @@ public final class UrlBuilder {
             port = null;
         }
 
-        // TODO decode protocol
         UrlBuilder builder = new UrlBuilder(url.getProtocol(), regNameDecoder.decode(url.getHost()), port);
 
         buildFromPath(builder, decoder, url);
