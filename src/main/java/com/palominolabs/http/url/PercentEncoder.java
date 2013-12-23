@@ -51,10 +51,11 @@ public final class PercentEncoder {
         this.encoder = charsetEncoder;
 
         // why is this a float? sigh.
-        int maxBytes = 1 + (int) encoder.maxBytesPerChar();
+        int maxBytesPerChar = 1 + (int) encoder.maxBytesPerChar();
         // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
-        byteBuffer = ByteBuffer.allocate(maxBytes * 2);
-        charBuffer = CharBuffer.allocate(2);
+        int minEncodeLoopsPerBuf = 16;
+        byteBuffer = ByteBuffer.allocate(maxBytesPerChar * 2 * minEncodeLoopsPerBuf);
+        charBuffer = CharBuffer.allocate(2 * minEncodeLoopsPerBuf);
     }
 
     public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
@@ -68,13 +69,14 @@ public final class PercentEncoder {
             char c = input.charAt(i);
 
             if (safeChars.get(c)) {
+                if (charBuffer.position() > 0) {
+                    addEncodedChars(handler, byteBuffer, charBuffer, encoder);
+                }
                 handler.onEncodedChar(c);
                 continue;
             }
 
             // not a safe char
-            charBuffer.clear();
-            byteBuffer.clear();
             charBuffer.append(c);
             if (isHighSurrogate(c)) {
                 if (input.length() > i + 1) {
@@ -95,8 +97,14 @@ public final class PercentEncoder {
                             .toHexString(c) + ")");
                 }
             }
-            addEncodedChars(handler, byteBuffer, charBuffer, encoder);
+
+            if (charBuffer.remaining() < 2) {
+                // flush if we could fill up next loop
+                addEncodedChars(handler, byteBuffer, charBuffer, encoder);
+            }
         }
+
+        addEncodedChars(handler, byteBuffer, charBuffer, encoder);
     }
 
     /**
@@ -119,15 +127,17 @@ public final class PercentEncoder {
      * Encode charBuffer to bytes as per charsetEncoder, then percent-encode those bytes into output.
      *
      * @param handler        where the encoded versions of the contents of charBuffer will be written
-     * @param byteBuffer     encoded chars buffer in write state. Will be written to, flipped, and fully read from.
-     * @param charBuffer     unencoded chars buffer containing one or two chars in write mode. Will be flipped to and
-     *                       fully read from.
+     * @param byteBuffer     encoded chars buffer in write state. Will be cleared, flipped, and fully read from.
+     * @param charBuffer     unencoded chars buffer containing one or two chars in write mode. Will be read from and
+     *                       cleared.
      * @param charsetEncoder encoder
      */
     private static void addEncodedChars(PercentEncoderHandler handler, ByteBuffer byteBuffer, CharBuffer charBuffer,
         CharsetEncoder charsetEncoder) throws MalformedInputException, UnmappableCharacterException {
         // need to read from the char buffer, which was most recently written to
         charBuffer.flip();
+
+        byteBuffer.clear();
 
         charsetEncoder.reset();
         CoderResult result = charsetEncoder.encode(charBuffer, byteBuffer, true);
@@ -151,6 +161,8 @@ public final class PercentEncoder {
             handler.onEncodedChar(capitalizeIfLetter(msbitsChar));
             handler.onEncodedChar(capitalizeIfLetter(lsbitsChar));
         }
+
+        charBuffer.clear();
     }
 
     /**
