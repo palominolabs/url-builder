@@ -26,10 +26,7 @@ import static java.lang.Character.isLowSurrogate;
 @NotThreadSafe
 public final class PercentEncoder {
 
-    /**
-     * Amount to add to a lowercase ascii alpha char to make it an uppercase. Used for hex encoding.
-     */
-    private static final int UPPER_CASE_DIFF = 'a' - 'A';
+    private static final char[] HEX_CODE = "0123456789ABCDEF".toCharArray();
 
     private final BitSet safeChars;
     private final CharsetEncoder encoder;
@@ -154,15 +151,9 @@ public final class PercentEncoder {
             flushOutputBuf(handler);
         }
 
-        int msbits = (b >> 4) & 0xF;
-        int lsbits = b & 0xF;
-
-        char msbitsChar = Character.forDigit(msbits, 16);
-        char lsbitsChar = Character.forDigit(lsbits, 16);
-
         outputBuf.append('%');
-        outputBuf.append(capitalizeIfLetter(msbitsChar));
-        outputBuf.append(capitalizeIfLetter(lsbitsChar));
+        outputBuf.append(HEX_CODE[b >> 4 & 0xF]);
+        outputBuf.append(HEX_CODE[b & 0xF]);
     }
 
     /**
@@ -223,17 +214,5 @@ public final class PercentEncoder {
         if (result.isUnmappable()) {
             throw new UnmappableCharacterException(result.length());
         }
-    }
-
-    /**
-     * @param c ascii lowercase alphabetic or numeric char
-     * @return char uppercased if a letter
-     */
-    private static char capitalizeIfLetter(char c) {
-        if (Character.isLetter(c)) {
-            return (char) (c - UPPER_CASE_DIFF);
-        }
-
-        return c;
     }
 }
