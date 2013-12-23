@@ -60,7 +60,11 @@ public final class PercentEncoder {
     public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
         MalformedInputException, UnmappableCharacterException {
 
+        // Clear buffers just in case a previous exception was thrown and buffers were left dirty.
+        // Under normal execution the buffers would be clear here anyway.
+        // No need to clear encodedBytes because it is always cleared before use.
         unsafeCharsToEncode.clear();
+        outputBuf.clear();
 
         for (int i = 0; i < input.length(); i++) {
 
