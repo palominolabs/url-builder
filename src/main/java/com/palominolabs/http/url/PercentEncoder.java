@@ -33,7 +33,10 @@ public final class PercentEncoder {
 
     private final BitSet safeChars;
     private final CharsetEncoder encoder;
-    private final StringBuilder outputBuf = new StringBuilder();
+    /**
+     * Pre-allocate a string handler to make the common case of encoding to a string faster
+     */
+    private final StringBuilderPercentEncoderHandler stringHandler = new StringBuilderPercentEncoderHandler();
 
     /**
      * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
@@ -46,24 +49,11 @@ public final class PercentEncoder {
         this.encoder = charsetEncoder;
     }
 
-    /**
-     * @param input input string
-     * @return the input string with every character that's not in safeChars turned into its byte representation via the
-     * instance's encoder and then percent-encoded
-     * @throws MalformedInputException      if encoder is configured to report errors and malformed input is detected
-     * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
-     *                                      detected
-     */
-    @Nonnull
-    public String encode(@Nonnull CharSequence input) throws MalformedInputException, UnmappableCharacterException {
-        // output buf will be at least as long as the input
-        outputBuf.setLength(0);
-        outputBuf.ensureCapacity(input.length());
-
-        // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
-
+    public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
+        MalformedInputException, UnmappableCharacterException {
         // why is this a float? sigh.
         int maxBytes = 1 + (int) encoder.maxBytesPerChar();
+        // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
         ByteBuffer byteBuffer = ByteBuffer.allocate(maxBytes * 2);
         CharBuffer charBuffer = CharBuffer.allocate(2);
 
@@ -72,7 +62,7 @@ public final class PercentEncoder {
             char c = input.charAt(i);
 
             if (safeChars.get(c)) {
-                outputBuf.append(c);
+                handler.onEncodedChar(c);
                 continue;
             }
 
@@ -99,22 +89,36 @@ public final class PercentEncoder {
                             .toHexString(c) + ")");
                 }
             }
-            addEncodedChars(outputBuf, byteBuffer, charBuffer, encoder);
+            addEncodedChars(handler, byteBuffer, charBuffer, encoder);
         }
+    }
 
-        return outputBuf.toString();
+    /**
+     * @param input input string
+     * @return the input string with every character that's not in safeChars turned into its byte representation via the
+     * instance's encoder and then percent-encoded
+     * @throws MalformedInputException      if encoder is configured to report errors and malformed input is detected
+     * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
+     *                                      detected
+     */
+    @Nonnull
+    public String encode(@Nonnull CharSequence input) throws MalformedInputException, UnmappableCharacterException {
+        stringHandler.reset();
+        stringHandler.ensureCapacity(input.length());
+        encode(input, stringHandler);
+        return stringHandler.getContents();
     }
 
     /**
      * Encode charBuffer to bytes as per charsetEncoder, then percent-encode those bytes into output.
      *
-     * @param output         where the encoded versions of the contents of charBuffer will be written
+     * @param handler        where the encoded versions of the contents of charBuffer will be written
      * @param byteBuffer     encoded chars buffer in write state. Will be written to, flipped, and fully read from.
      * @param charBuffer     unencoded chars buffer containing one or two chars in write mode. Will be flipped to and
      *                       fully read from.
      * @param charsetEncoder encoder
      */
-    private static void addEncodedChars(StringBuilder output, ByteBuffer byteBuffer, CharBuffer charBuffer,
+    private static void addEncodedChars(PercentEncoderHandler handler, ByteBuffer byteBuffer, CharBuffer charBuffer,
         CharsetEncoder charsetEncoder) throws MalformedInputException, UnmappableCharacterException {
         // need to read from the char buffer, which was most recently written to
         charBuffer.flip();
@@ -137,9 +141,9 @@ public final class PercentEncoder {
             char msbitsChar = Character.forDigit(msbits, 16);
             char lsbitsChar = Character.forDigit(lsbits, 16);
 
-            output.append('%');
-            output.append(capitalizeIfLetter(msbitsChar));
-            output.append(capitalizeIfLetter(lsbitsChar));
+            handler.onEncodedChar('%');
+            handler.onEncodedChar(capitalizeIfLetter(msbitsChar));
+            handler.onEncodedChar(capitalizeIfLetter(lsbitsChar));
         }
     }
 
