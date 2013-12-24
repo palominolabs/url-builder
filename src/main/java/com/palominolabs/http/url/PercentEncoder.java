@@ -36,29 +36,14 @@ public final class PercentEncoder {
     private final StringBuilderPercentEncoderHandler stringHandler = new StringBuilderPercentEncoderHandler();
     private final ByteBuffer encodedBytes;
     private final CharBuffer unsafeCharsToEncode;
-    private final CharBuffer outputBuf;
 
     /**
-     * Create a PercentEncoder with default buffer sizes.
-     *
      * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
      *                       those chars set to true. Treated as read only.
      * @param charsetEncoder charset encoder to encode characters with. Make sure to not re-use CharsetEncoder instances
      *                       across threads.
      */
     public PercentEncoder(@Nonnull BitSet safeChars, @Nonnull CharsetEncoder charsetEncoder) {
-        this(safeChars, charsetEncoder, 256);
-    }
-
-    /**
-     * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
-     *                       those chars set to true. Treated as read only.
-     * @param charsetEncoder charset encoder to encode characters with. Make sure to not re-use CharsetEncoder instances
-     *                       across threads.
-     * @param outputBufSize  Size of output buffer in chars
-     */
-    public PercentEncoder(@Nonnull BitSet safeChars, @Nonnull CharsetEncoder charsetEncoder,
-        int outputBufSize) {
         this.safeChars = safeChars;
         this.encoder = charsetEncoder;
 
@@ -67,23 +52,17 @@ public final class PercentEncoder {
         // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
         encodedBytes = ByteBuffer.allocate(maxBytesPerChar * 2);
         unsafeCharsToEncode = CharBuffer.allocate(2);
-        outputBuf = CharBuffer.allocate(outputBufSize);
     }
 
     public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
         MalformedInputException, UnmappableCharacterException {
-
-        // Clear buffers just in case a previous exception was thrown and buffers were left dirty.
-        // Under normal execution the buffers would be clear here anyway.
-        // No need to clear encodedBytes because it is always cleared before use.
-        outputBuf.clear();
 
         for (int i = 0; i < input.length(); i++) {
 
             char c = input.charAt(i);
 
             if (safeChars.get(c)) {
-                addOutput(handler, c);
+                handler.onOutputChar(c);
                 continue;
             }
 
@@ -112,8 +91,6 @@ public final class PercentEncoder {
 
             flushUnsafeCharBuffer(handler);
         }
-
-        flushOutputBuf(handler);
     }
 
     /**
@@ -130,47 +107,6 @@ public final class PercentEncoder {
         stringHandler.ensureCapacity(input.length());
         encode(input, stringHandler);
         return stringHandler.getContents();
-    }
-
-    /**
-     * Add c to output buffer, flushing to handler if needed.
-     *
-     * @param handler handler to flush to, if needed
-     * @param c       char to append
-     */
-    private void addOutput(PercentEncoderHandler handler, char c) {
-        if (!outputBuf.hasRemaining()) {
-            flushOutputBuf(handler);
-        }
-
-        outputBuf.append(c);
-    }
-
-    /**
-     * Add a byte to output buffer after hex encoding,  flushing to handler if needed.
-     *
-     * @param handler handler to flush to, if needed
-     * @param b       byte to hex encode and append
-     */
-    private void addOutput(PercentEncoderHandler handler, byte b) {
-        if (outputBuf.remaining() < 3) {
-            flushOutputBuf(handler);
-        }
-
-        outputBuf.append('%');
-        outputBuf.append(HEX_CODE[b >> 4 & 0xF]);
-        outputBuf.append(HEX_CODE[b & 0xF]);
-    }
-
-    /**
-     * Call the output handler and clear the output buffer.
-     *
-     * @param handler handler to call
-     */
-    private void flushOutputBuf(PercentEncoderHandler handler) {
-        outputBuf.flip();
-        handler.onOutputChars(outputBuf);
-        outputBuf.clear();
     }
 
     /**
@@ -198,7 +134,10 @@ public final class PercentEncoder {
 
         while (encodedBytes.hasRemaining()) {
             byte b = encodedBytes.get();
-            addOutput(handler, b);
+
+            handler.onOutputChar('%');
+            handler.onOutputChar(HEX_CODE[b >> 4 & 0xF]);
+            handler.onOutputChar(HEX_CODE[b & 0xF]);
         }
     }
 

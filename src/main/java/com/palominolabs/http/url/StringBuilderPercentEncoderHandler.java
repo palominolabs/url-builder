@@ -2,7 +2,6 @@ package com.palominolabs.http.url;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.nio.CharBuffer;
 
 /**
  * A PercentEncoderHandler implementation that accumulates chars in a buffer.
@@ -39,7 +38,7 @@ public final class StringBuilderPercentEncoderHandler implements PercentEncoderH
     }
 
     @Override
-    public void onOutputChars(@Nonnull CharBuffer buffer) {
-        stringBuilder.append(buffer);
+    public void onOutputChar(char c) {
+        stringBuilder.append(c);
     }
 }
