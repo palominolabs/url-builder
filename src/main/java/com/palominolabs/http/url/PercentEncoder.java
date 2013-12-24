@@ -49,7 +49,7 @@ public final class PercentEncoder {
      *                       across threads.
      */
     public PercentEncoder(@Nonnull BitSet safeChars, @Nonnull CharsetEncoder charsetEncoder) {
-        this(safeChars, charsetEncoder, 64, 256);
+        this(safeChars, charsetEncoder, 1024, 8192);
     }
 
     /**
