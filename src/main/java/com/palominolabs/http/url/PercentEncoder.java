@@ -54,6 +54,15 @@ public final class PercentEncoder {
         unsafeCharsToEncode = CharBuffer.allocate(2);
     }
 
+    /**
+     * Encode the input and pass output chars to a handler.
+     *
+     * @param input   input string
+     * @param handler handler to call on each output character
+     * @throws MalformedInputException      if encoder is configured to report errors and malformed input is detected
+     * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
+     *                                      detected
+     */
     public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
         MalformedInputException, UnmappableCharacterException {
 
@@ -94,6 +103,8 @@ public final class PercentEncoder {
     }
 
     /**
+     * Encode the input and return the resulting text as a String.
+     *
      * @param input input string
      * @return the input string with every character that's not in safeChars turned into its byte representation via the
      * instance's encoder and then percent-encoded
