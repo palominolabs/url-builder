@@ -4,8 +4,6 @@
 
 package com.palominolabs.http.url;
 
-import com.google.common.base.Preconditions;
-
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
@@ -49,7 +47,7 @@ public final class PercentEncoder {
      *                       across threads.
      */
     public PercentEncoder(@Nonnull BitSet safeChars, @Nonnull CharsetEncoder charsetEncoder) {
-        this(safeChars, charsetEncoder, 64, 256);
+        this(safeChars, charsetEncoder, 256);
     }
 
     /**
@@ -57,18 +55,12 @@ public final class PercentEncoder {
      *                       those chars set to true. Treated as read only.
      * @param charsetEncoder charset encoder to encode characters with. Make sure to not re-use CharsetEncoder instances
      *                       across threads.
-     * @param encodeBufSize  How many unsafe code points (1 or 2 chars) can be buffered before encoding and flushing the
-     *                       result to the output buffer.
      * @param outputBufSize  Size of output buffer in chars
      */
     public PercentEncoder(@Nonnull BitSet safeChars, @Nonnull CharsetEncoder charsetEncoder,
-        int encodeBufSize,
         int outputBufSize) {
         this.safeChars = safeChars;
         this.encoder = charsetEncoder;
-
-        Preconditions.checkArgument(encodeBufSize >= 1, "Encode buf size must be at least 1");
-        Preconditions.checkArgument(outputBufSize >= 3, "Output buf size must be at least 3");
 
         // why is this a float? sigh.
         int maxBytesPerChar = 1 + (int) encoder.maxBytesPerChar();
