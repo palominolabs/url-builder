@@ -73,8 +73,8 @@ public final class PercentEncoder {
         // why is this a float? sigh.
         int maxBytesPerChar = 1 + (int) encoder.maxBytesPerChar();
         // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
-        encodedBytes = ByteBuffer.allocate(maxBytesPerChar * 2 * encodeBufSize);
-        unsafeCharsToEncode = CharBuffer.allocate(2 * encodeBufSize);
+        encodedBytes = ByteBuffer.allocate(maxBytesPerChar * 2);
+        unsafeCharsToEncode = CharBuffer.allocate(2);
         outputBuf = CharBuffer.allocate(outputBufSize);
     }
 
@@ -84,7 +84,6 @@ public final class PercentEncoder {
         // Clear buffers just in case a previous exception was thrown and buffers were left dirty.
         // Under normal execution the buffers would be clear here anyway.
         // No need to clear encodedBytes because it is always cleared before use.
-        unsafeCharsToEncode.clear();
         outputBuf.clear();
 
         for (int i = 0; i < input.length(); i++) {
@@ -92,14 +91,12 @@ public final class PercentEncoder {
             char c = input.charAt(i);
 
             if (safeChars.get(c)) {
-                if (haveUnsafeCharsBuffered()) {
-                    flushUnsafeCharBuffer(handler);
-                }
                 addOutput(handler, c);
                 continue;
             }
 
             // not a safe char
+            unsafeCharsToEncode.clear();
             unsafeCharsToEncode.append(c);
             if (isHighSurrogate(c)) {
                 if (input.length() > i + 1) {
@@ -121,13 +118,9 @@ public final class PercentEncoder {
                 }
             }
 
-            if (unsafeCharsToEncode.remaining() < 2) {
-                // flush if we could fill up next loop
-                flushUnsafeCharBuffer(handler);
-            }
+            flushUnsafeCharBuffer(handler);
         }
 
-        flushUnsafeCharBuffer(handler);
         flushOutputBuf(handler);
     }
 
@@ -145,10 +138,6 @@ public final class PercentEncoder {
         stringHandler.ensureCapacity(input.length());
         encode(input, stringHandler);
         return stringHandler.getContents();
-    }
-
-    private boolean haveUnsafeCharsBuffered() {
-        return unsafeCharsToEncode.position() > 0;
     }
 
     /**
@@ -219,8 +208,6 @@ public final class PercentEncoder {
             byte b = encodedBytes.get();
             addOutput(handler, b);
         }
-
-        unsafeCharsToEncode.clear();
     }
 
     /**
