@@ -11,7 +11,7 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.1'
+    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.2'
     classpath "net.saliman:gradle-cobertura-plugin:2.2.1"
   }
 }
