@@ -2,19 +2,7 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-apply plugin: 'errorprone'
-apply plugin: 'cobertura'
 apply plugin: 'findbugs'
-
-buildscript {
-  repositories {
-    mavenCentral()
-  }
-  dependencies {
-    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.1'
-    classpath "net.saliman:gradle-cobertura-plugin:2.2.1"
-  }
-}
 
 group = 'com.palominolabs.http'
 version = '1.1.1-SNAPSHOT'
@@ -115,6 +103,7 @@ uploadArchives {
 }
 
 findbugs {
+  toolVersion = '3.0.0'
   // don't findbugs the tests
   sourceSets = [sourceSets.main]
 }
@@ -124,3 +113,8 @@ tasks.withType(FindBugs) {
     html.enabled = true
   }
 }
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.0'
+}
+
