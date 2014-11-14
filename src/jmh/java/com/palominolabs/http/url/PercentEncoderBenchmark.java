@@ -30,8 +30,8 @@ public class PercentEncoderBenchmark {
     @State(Scope.Thread)
     public static class ThreadState {
         PercentEncoder encoder = UrlPercentEncoders.getQueryEncoder();
-        PercentEncoderHandler noOpHandler = new NoOpHandler();
-        AccumXorHandler accumXorHandler = new AccumXorHandler();
+        PercentEncoderOutputHandler noOpHandler = new NoOpOutputHandler();
+        AccumXorOutputHandler accumXorHandler = new AccumXorOutputHandler();
     }
 
     @Benchmark
@@ -91,7 +91,7 @@ public class PercentEncoderBenchmark {
         return state.accumXorHandler.c;
     }
 
-    static class NoOpHandler implements PercentEncoderHandler {
+    static class NoOpOutputHandler implements PercentEncoderOutputHandler {
 
         @Override
         public void onOutputChar(char c) {
@@ -102,7 +102,7 @@ public class PercentEncoderBenchmark {
     /**
      * A handler that doesn't allocate, but can't be optimized away
      */
-    static class AccumXorHandler implements PercentEncoderHandler {
+    static class AccumXorOutputHandler implements PercentEncoderOutputHandler {
         char c;
 
         @Override

@@ -33,7 +33,7 @@ public final class PercentEncoder {
     /**
      * Pre-allocate a string handler to make the common case of encoding to a string faster
      */
-    private final StringBuilderPercentEncoderHandler stringHandler = new StringBuilderPercentEncoderHandler();
+    private final StringBuilderPercentEncoderOutputHandler stringHandler = new StringBuilderPercentEncoderOutputHandler();
     private final ByteBuffer encodedBytes;
     private final CharBuffer unsafeCharsToEncode;
 
@@ -63,7 +63,7 @@ public final class PercentEncoder {
      * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
      *                                      detected
      */
-    public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
+    public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderOutputHandler handler) throws
         MalformedInputException, UnmappableCharacterException {
 
         for (int i = 0; i < input.length(); i++) {
@@ -127,7 +127,7 @@ public final class PercentEncoder {
      *
      * @param handler where the encoded versions of the contents of unsafeCharsToEncode will be written
      */
-    private void flushUnsafeCharBuffer(PercentEncoderHandler handler) throws MalformedInputException,
+    private void flushUnsafeCharBuffer(PercentEncoderOutputHandler handler) throws MalformedInputException,
         UnmappableCharacterException {
         // need to read from the char buffer, which was most recently written to
         unsafeCharsToEncode.flip();

@@ -7,14 +7,14 @@ import javax.annotation.concurrent.NotThreadSafe;
  * A PercentEncoderHandler implementation that accumulates chars in a buffer.
  */
 @NotThreadSafe
-public final class StringBuilderPercentEncoderHandler implements PercentEncoderHandler {
+public final class StringBuilderPercentEncoderOutputHandler implements PercentEncoderOutputHandler {
 
     private final StringBuilder stringBuilder;
 
     /**
      * Create a new handler with a default size StringBuilder.
      */
-    public StringBuilderPercentEncoderHandler() {
+    public StringBuilderPercentEncoderOutputHandler() {
         stringBuilder = new StringBuilder();
     }
 
