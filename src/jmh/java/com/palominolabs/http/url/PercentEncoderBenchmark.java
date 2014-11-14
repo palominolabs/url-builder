@@ -30,6 +30,8 @@ public class PercentEncoderBenchmark {
     @State(Scope.Thread)
     public static class ThreadState {
         PercentEncoder encoder = UrlPercentEncoders.getQueryEncoder();
+        PercentEncoderHandler noOpHandler = new NoOpHandler();
+        AccumXorHandler accumXorHandler = new AccumXorHandler();
     }
 
     @Benchmark
@@ -67,5 +69,45 @@ public class PercentEncoderBenchmark {
         return state.encoder.encode(LARGE_STRING_ALL_UNSAFE);
     }
 
+    @Benchmark
+    public void testPercentEncodeSmallNoOpMix(ThreadState state) throws CharacterCodingException {
+        state.encoder.encode(SMALL_STRING_MIX, state.noOpHandler);
+    }
 
+    @Benchmark
+    public void testPercentEncodeLargeNoOpMix(ThreadState state) throws CharacterCodingException {
+        state.encoder.encode(LARGE_STRING_MIX, state.noOpHandler);
+    }
+
+    @Benchmark
+    public char testPercentEncodeSmallAccumXorMix(ThreadState state) throws CharacterCodingException {
+        state.encoder.encode(SMALL_STRING_MIX, state.accumXorHandler);
+        return state.accumXorHandler.c;
+    }
+
+    @Benchmark
+    public char testPercentEncodeLargeAccumXorMix(ThreadState state) throws CharacterCodingException {
+        state.encoder.encode(LARGE_STRING_MIX, state.accumXorHandler);
+        return state.accumXorHandler.c;
+    }
+
+    static class NoOpHandler implements PercentEncoderHandler {
+
+        @Override
+        public void onOutputChar(char c) {
+            // no op
+        }
+    }
+
+    /**
+     * A handler that doesn't allocate, but can't be optimized away
+     */
+    static class AccumXorHandler implements PercentEncoderHandler {
+        char c;
+
+        @Override
+        public void onOutputChar(char c) {
+            this.c ^= c;
+        }
+    }
 }

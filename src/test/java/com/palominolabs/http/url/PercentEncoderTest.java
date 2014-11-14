@@ -8,6 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.MalformedInputException;
+import java.nio.charset.UnmappableCharacterException;
 import java.util.BitSet;
 
 import static com.google.common.base.Charsets.UTF_16BE;
@@ -49,6 +51,16 @@ public final class PercentEncoderTest {
         PercentEncoder pe = new PercentEncoder(set, UTF_8.newEncoder().onMalformedInput(REPLACE)
             .onUnmappableCharacter(REPLACE));
         assertEquals("abcd%41%42%43%44", pe.encode("abcdABCD"));
+    }
+
+    @Test
+    public void testEncodeInBetweenSafe() throws MalformedInputException, UnmappableCharacterException {
+        assertEquals("abc%20123", alnum.encode("abc 123"));
+    }
+
+    @Test
+    public void testSafeInBetweenEncoded() throws MalformedInputException, UnmappableCharacterException {
+        assertEquals("%20abc%20", alnum.encode(" abc "));
     }
 
     @Test

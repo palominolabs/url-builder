@@ -26,14 +26,16 @@ import static java.lang.Character.isLowSurrogate;
 @NotThreadSafe
 public final class PercentEncoder {
 
-    /**
-     * Amount to add to a lowercase ascii alpha char to make it an uppercase. Used for hex encoding.
-     */
-    private static final int UPPER_CASE_DIFF = 'a' - 'A';
+    private static final char[] HEX_CODE = "0123456789ABCDEF".toCharArray();
 
     private final BitSet safeChars;
     private final CharsetEncoder encoder;
-    private final StringBuilder outputBuf = new StringBuilder();
+    /**
+     * Pre-allocate a string handler to make the common case of encoding to a string faster
+     */
+    private final StringBuilderPercentEncoderHandler stringHandler = new StringBuilderPercentEncoderHandler();
+    private final ByteBuffer encodedBytes;
+    private final CharBuffer unsafeCharsToEncode;
 
     /**
      * @param safeChars      the set of chars to NOT encode, stored as a bitset with the int positions corresponding to
@@ -44,48 +46,44 @@ public final class PercentEncoder {
     public PercentEncoder(@Nonnull BitSet safeChars, @Nonnull CharsetEncoder charsetEncoder) {
         this.safeChars = safeChars;
         this.encoder = charsetEncoder;
+
+        // why is this a float? sigh.
+        int maxBytesPerChar = 1 + (int) encoder.maxBytesPerChar();
+        // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
+        encodedBytes = ByteBuffer.allocate(maxBytesPerChar * 2);
+        unsafeCharsToEncode = CharBuffer.allocate(2);
     }
 
     /**
-     * @param input input string
-     * @return the input string with every character that's not in safeChars turned into its byte representation via the
-     * instance's encoder and then percent-encoded
+     * Encode the input and pass output chars to a handler.
+     *
+     * @param input   input string
+     * @param handler handler to call on each output character
      * @throws MalformedInputException      if encoder is configured to report errors and malformed input is detected
      * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
      *                                      detected
      */
-    @Nonnull
-    public String encode(@Nonnull CharSequence input) throws MalformedInputException, UnmappableCharacterException {
-        // output buf will be at least as long as the input
-        outputBuf.setLength(0);
-        outputBuf.ensureCapacity(input.length());
-
-        // need to handle surrogate pairs, so need to be able to handle 2 chars worth of stuff at once
-
-        // why is this a float? sigh.
-        int maxBytes = 1 + (int) encoder.maxBytesPerChar();
-        ByteBuffer byteBuffer = ByteBuffer.allocate(maxBytes * 2);
-        CharBuffer charBuffer = CharBuffer.allocate(2);
+    public void encode(@Nonnull CharSequence input, @Nonnull PercentEncoderHandler handler) throws
+        MalformedInputException, UnmappableCharacterException {
 
         for (int i = 0; i < input.length(); i++) {
 
             char c = input.charAt(i);
 
             if (safeChars.get(c)) {
-                outputBuf.append(c);
+                handler.onOutputChar(c);
                 continue;
             }
 
             // not a safe char
-            charBuffer.clear();
-            byteBuffer.clear();
-            charBuffer.append(c);
+            unsafeCharsToEncode.clear();
+            unsafeCharsToEncode.append(c);
             if (isHighSurrogate(c)) {
                 if (input.length() > i + 1) {
                     // get the low surrogate as well
                     char lowSurrogate = input.charAt(i + 1);
                     if (isLowSurrogate(lowSurrogate)) {
-                        charBuffer.append(lowSurrogate);
+                        unsafeCharsToEncode.append(lowSurrogate);
                         i++;
                     } else {
                         throw new IllegalArgumentException(
@@ -99,47 +97,58 @@ public final class PercentEncoder {
                             .toHexString(c) + ")");
                 }
             }
-            addEncodedChars(outputBuf, byteBuffer, charBuffer, encoder);
-        }
 
-        return outputBuf.toString();
+            flushUnsafeCharBuffer(handler);
+        }
     }
 
     /**
-     * Encode charBuffer to bytes as per charsetEncoder, then percent-encode those bytes into output.
+     * Encode the input and return the resulting text as a String.
      *
-     * @param output         where the encoded versions of the contents of charBuffer will be written
-     * @param byteBuffer     encoded chars buffer in write state. Will be written to, flipped, and fully read from.
-     * @param charBuffer     unencoded chars buffer containing one or two chars in write mode. Will be flipped to and
-     *                       fully read from.
-     * @param charsetEncoder encoder
+     * @param input input string
+     * @return the input string with every character that's not in safeChars turned into its byte representation via the
+     * instance's encoder and then percent-encoded
+     * @throws MalformedInputException      if encoder is configured to report errors and malformed input is detected
+     * @throws UnmappableCharacterException if encoder is configured to report errors and an unmappable character is
+     *                                      detected
      */
-    private static void addEncodedChars(StringBuilder output, ByteBuffer byteBuffer, CharBuffer charBuffer,
-        CharsetEncoder charsetEncoder) throws MalformedInputException, UnmappableCharacterException {
-        // need to read from the char buffer, which was most recently written to
-        charBuffer.flip();
+    @Nonnull
+    public String encode(@Nonnull CharSequence input) throws MalformedInputException, UnmappableCharacterException {
+        stringHandler.reset();
+        stringHandler.ensureCapacity(input.length());
+        encode(input, stringHandler);
+        return stringHandler.getContents();
+    }
 
-        charsetEncoder.reset();
-        CoderResult result = charsetEncoder.encode(charBuffer, byteBuffer, true);
+    /**
+     * Encode unsafeCharsToEncode to bytes as per charsetEncoder, then percent-encode those bytes into output.
+     *
+     * Side effects: unsafeCharsToEncode will be read from and cleared. encodedBytes will be cleared and written to.
+     *
+     * @param handler where the encoded versions of the contents of unsafeCharsToEncode will be written
+     */
+    private void flushUnsafeCharBuffer(PercentEncoderHandler handler) throws MalformedInputException,
+        UnmappableCharacterException {
+        // need to read from the char buffer, which was most recently written to
+        unsafeCharsToEncode.flip();
+
+        encodedBytes.clear();
+
+        encoder.reset();
+        CoderResult result = encoder.encode(unsafeCharsToEncode, encodedBytes, true);
         checkResult(result);
-        result = charsetEncoder.flush(byteBuffer);
+        result = encoder.flush(encodedBytes);
         checkResult(result);
 
         // read contents of bytebuffer
-        byteBuffer.flip();
+        encodedBytes.flip();
 
-        while (byteBuffer.hasRemaining()) {
-            byte b = byteBuffer.get();
+        while (encodedBytes.hasRemaining()) {
+            byte b = encodedBytes.get();
 
-            int msbits = (b >> 4) & 0xF;
-            int lsbits = b & 0xF;
-
-            char msbitsChar = Character.forDigit(msbits, 16);
-            char lsbitsChar = Character.forDigit(lsbits, 16);
-
-            output.append('%');
-            output.append(capitalizeIfLetter(msbitsChar));
-            output.append(capitalizeIfLetter(lsbitsChar));
+            handler.onOutputChar('%');
+            handler.onOutputChar(HEX_CODE[b >> 4 & 0xF]);
+            handler.onOutputChar(HEX_CODE[b & 0xF]);
         }
     }
 
@@ -159,17 +168,5 @@ public final class PercentEncoder {
         if (result.isUnmappable()) {
             throw new UnmappableCharacterException(result.length());
         }
-    }
-
-    /**
-     * @param c ascii lowercase alphabetic or numeric char
-     * @return char uppercased if a letter
-     */
-    private static char capitalizeIfLetter(char c) {
-        if (Character.isLetter(c)) {
-            return (char) (c - UPPER_CASE_DIFF);
-        }
-
-        return c;
     }
 }
