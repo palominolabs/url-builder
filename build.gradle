@@ -24,12 +24,12 @@ sourceCompatibility = JavaVersion.VERSION_1_6
 
 ext {
   depVersions = [
-      slf4j: '1.7.5',
+      slf4j: '1.7.10',
   ]
 }
 
 dependencies {
-  compile 'com.google.code.findbugs:jsr305:2.0.2'
+  compile 'com.google.code.findbugs:jsr305:3.0.0'
   compile 'com.google.guava:guava:15.0'
   compile 'org.apache.commons:commons-lang3:3.1'
 
@@ -39,12 +39,12 @@ dependencies {
   testRuntime "org.slf4j:jcl-over-slf4j:$depVersions.slf4j"
   testCompile "org.slf4j:jul-to-slf4j:$depVersions.slf4j"
 
-  testCompile 'junit:junit:4.11'
+  testCompile 'junit:junit:4.12'
 
   testCompile 'org.codehaus.groovy:groovy-all:2.2.1'
 
-  jmh 'org.openjdk.jmh:jmh-core:1.2'
-  jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.2'
+  jmh 'org.openjdk.jmh:jmh-core:1.6.1'
+  jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.6.1'
 }
 
 repositories {
