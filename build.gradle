@@ -101,8 +101,8 @@ uploadArchives {
 
         licenses {
           license {
-            name 'The Apache Software License, Version 2.0'
-            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            name 'Copyfree Open Innovation License'
+            url 'http://copyfree.org/content/standard/licenses/coil/license.txt'
             distribution 'repo'
           }
         }
