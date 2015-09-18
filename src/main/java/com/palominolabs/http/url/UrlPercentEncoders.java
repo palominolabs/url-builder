@@ -44,7 +44,7 @@ public final class UrlPercentEncoders {
 
         /*
         * at this point it represents RFC 3986 'query'.
-        * Remove delimiters for HTTP queries
+        * Remove delimiters for HTML queries
         * http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1 also specifies that "+" can mean space in a query,
         * so we will make sure to say that '+' is not safe to leave as-is
         */

@@ -5,13 +5,12 @@
 package com.palominolabs.http.url;
 
 import com.google.common.base.Throwables;
-import org.junit.Test;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
+import org.junit.Test;
 
 import static com.palominolabs.http.url.UrlBuilder.forHost;
 import static com.palominolabs.http.url.UrlBuilder.fromUrl;
@@ -317,13 +316,28 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testFromUrlMalformedQueryParam() throws MalformedURLException, CharacterCodingException {
-        try {
-            fromUrl(new URL("http://foo.com/foo?q1=v1=v2"));
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertEquals("Malformed query param: <q1=v1=v2>", e.getMessage());
-        }
+    public void testFromUrlMalformedQueryParamMultiValues() throws MalformedURLException, CharacterCodingException {
+        assertUrlBuilderRoundtrip("http://foo.com/foo?q1=v1=v2");
+    }
+
+    @Test
+    public void testFromUrlUnstructuredQuery() throws MalformedURLException, CharacterCodingException {
+        assertUrlBuilderRoundtrip("http://foo.com/foo?query");
+    }
+
+    @Test
+    public void testCantUseQueryParamAfterQuery() {
+
+    }
+
+    @Test
+    public void testCantUseQueryAfterQueryParam() {
+
+    }
+
+    @Test
+    public void testQueryWithSpecialChars() {
+
     }
 
     private void assertUrlBuilderRoundtrip(String url) {

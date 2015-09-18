@@ -5,17 +5,17 @@
 package com.palominolabs.http.url;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang3.tuple.Pair;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.NotThreadSafe;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
+import org.apache.commons.lang3.tuple.Pair;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.palominolabs.http.url.UrlPercentEncoders.getFragmentEncoder;
@@ -27,8 +27,9 @@ import static com.palominolabs.http.url.UrlPercentEncoders.getRegNameEncoder;
 /**
  * Builder for urls with url-encoding applied to path, query param, etc.
  *
- * Escaping rules are from RFC 3986, RFC 1738 and the HTML 4 spec. This means that this diverges from the canonical
- * URI/URL rules for the sake of being what you want to actually make HTTP-useful URLs.
+ * Escaping rules are from RFC 3986, RFC 1738 and the HTML 4 spec (http://www.w3.org/TR/html401/interact/forms.html#form-content-type).
+ * This means that this diverges from the canonical URI/URL rules for the sake of being what you want to actually make
+ * HTTP-useful URLs.
  */
 @NotThreadSafe
 public final class UrlBuilder {
@@ -56,6 +57,12 @@ public final class UrlBuilder {
     private final Integer port;
 
     private final List<Pair<String, String>> queryParams = Lists.newArrayList();
+
+    /**
+     * If this is non-null, queryParams must be empty, and vice versa.
+     */
+    @Nullable
+    private String unstructuredQuery;
 
     private final List<PathSegment> pathSegments = Lists.newArrayList();
 
@@ -191,6 +198,11 @@ public final class UrlBuilder {
     /**
      * Add a query parameter. Query parameters will be encoded in the order added.
      *
+     * Using query strings to encode key=value pairs is not part of the URI/URL specification; it is specified by
+     * http://www.w3.org/TR/html401/interact/forms.html#form-content-type.
+     *
+     * If you use this method to build a query string, you cannot also use {@link UrlBuilder#query(String)}.
+     *
      * @param name  param name
      * @param value param value
      * @return this
@@ -198,6 +210,26 @@ public final class UrlBuilder {
     @Nonnull
     public UrlBuilder queryParam(@Nonnull String name, @Nonnull String value) {
         queryParams.add(Pair.of(name, value));
+        return this;
+    }
+
+    /**
+     * Add a complete query string of arbitrary structure. If you use this method, you cannot also use {@link
+     * UrlBuilder#queryParam(String, String)}.
+     *
+     * This is useful when you want to specify a query string that is not of key=value format.
+     *
+     * @param query Complete URI query, as specified by https://tools.ietf.org/html/rfc3986#section-3.4
+     * @return this
+     */
+    @Nonnull
+    public UrlBuilder query(@Nonnull String query) {
+        if (!queryParams.isEmpty()) {
+            throw new IllegalStateException("Cannot call query() when this already has queryParam pairs specified");
+        }
+
+        unstructuredQuery = query;
+
         return this;
     }
 
@@ -313,14 +345,29 @@ public final class UrlBuilder {
         if (url.getQuery() != null) {
             String q = url.getQuery();
 
+            // TODO: parse into query param name=value pairs if possible, but if not, just have an unstructured 'query'
+
+            // try to parse into &-separated key=value pairs
+            List<Pair<String, String>> pairs = new ArrayList<Pair<String, String>>();
+            boolean parseOk = true;
+
             for (String queryChunk : q.split("&")) {
                 String[] queryParamChunks = queryChunk.split("=");
 
                 if (queryParamChunks.length != 2) {
-                    throw new IllegalArgumentException("Malformed query param: <" + queryChunk + ">");
+                    parseOk = false;
+                    break;
                 }
 
-                builder.queryParam(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1]));
+                pairs.add(Pair.of(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1])));
+            }
+
+            if (parseOk) {
+                for (Pair<String, String> pair : pairs) {
+                    builder.queryParam(pair.getKey(), pair.getValue());
+                }
+            } else {
+                builder.query(q);
             }
         }
     }
