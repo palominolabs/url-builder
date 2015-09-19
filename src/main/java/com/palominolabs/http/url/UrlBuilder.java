@@ -133,14 +133,14 @@ public final class UrlBuilder {
     /**
      * Create a UrlBuilder initialized with the contents of a {@link URL}.
      *
-     * The query string will be parsed into HTML4 query params if it can be separated into a <code>&amp;</code>-separated
-     * sequence of <code>key=value</code> pairs. The sequence of query params can then be appended to by continuing to
-     * call {@link UrlBuilder#queryParam(String, String)}. The concept of query params is only part of the HTML spec
-     * (and common HTTP usage), though, so it's perfectly legal to have a query string that is in some other form. To
-     * represent this case, if the aforementioned param-parsing attempt fails, the query string will be treated as just
-     * a monolithic, unstructured, string. In this case, calls to {@link UrlBuilder#queryParam(String, String)} on the
-     * resulting instance will throw IllegalStateException, and only calls to {@link UrlBuilder#query(String)}}, which
-     * replaces the entire query string, are allowed.
+     * The query string will be parsed into HTML4 query params if it can be separated into a
+     * <code>&amp;</code>-separated sequence of <code>key=value</code> pairs. The sequence of query params can then be
+     * appended to by continuing to call {@link UrlBuilder#queryParam(String, String)}. The concept of query params is
+     * only part of the HTML spec (and common HTTP usage), though, so it's perfectly legal to have a query string that
+     * is in some other form. To represent this case, if the aforementioned param-parsing attempt fails, the query
+     * string will be treated as just a monolithic, unstructured, string. In this case, calls to {@link
+     * UrlBuilder#queryParam(String, String)} on the resulting instance will throw IllegalStateException, and only calls
+     * to {@link UrlBuilder#query(String)}}, which replaces the entire query string, are allowed.
      *
      * @param url            url to initialize builder with
      * @param charsetDecoder the decoder to decode encoded bytes with (except for reg names, which are always UTF-8)
@@ -233,8 +233,8 @@ public final class UrlBuilder {
     }
 
     /**
-     * Add a complete query string of arbitrary structure. This is useful when you want to specify a query string that
-     * is not of key=value format.
+     * Add a complete query string of arbitrary structure, replacing any previously set query. This is useful when you
+     * want to specify a query string that is not of key=value format.
      *
      * If you use this method, you cannot also use {@link UrlBuilder#queryParam(String, String)}. See {@link
      * UrlBuilder#fromUrl(URL, CharsetDecoder)}.
@@ -367,8 +367,6 @@ public final class UrlBuilder {
         CharacterCodingException {
         if (url.getQuery() != null) {
             String q = url.getQuery();
-
-            // TODO: parse into query param name=value pairs if possible, but if not, just have an unstructured 'query'
 
             // try to parse into &-separated key=value pairs
             List<Pair<String, String>> pairs = new ArrayList<Pair<String, String>>();
