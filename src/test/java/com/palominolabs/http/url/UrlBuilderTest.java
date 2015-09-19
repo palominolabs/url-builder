@@ -271,6 +271,11 @@ public final class UrlBuilderTest {
     }
 
     @Test
+    public void testFromUrlWithEncodedQueryParamDelimiter() {
+        assertUrlBuilderRoundtrip("http://foo.com/foo?q1=%3Dv1&%26q2=v2");
+    }
+
+    @Test
     public void testFromUrlWithEncodedFragment() {
         assertUrlBuilderRoundtrip("http://foo.com/foo#b%20ar");
     }
@@ -321,23 +326,54 @@ public final class UrlBuilderTest {
     }
 
     @Test
+    public void testFromUrlMalformedQueryParamNoValue() throws MalformedURLException, CharacterCodingException {
+        assertUrlBuilderRoundtrip("http://foo.com/foo?q1=v1&q2");
+    }
+
+    @Test
     public void testFromUrlUnstructuredQuery() throws MalformedURLException, CharacterCodingException {
-        assertUrlBuilderRoundtrip("http://foo.com/foo?query");
+        assertUrlBuilderRoundtrip("http://foo.com/foo?query==&");
     }
 
     @Test
     public void testCantUseQueryParamAfterQuery() {
+        UrlBuilder ub = forHost("http", "foo.com").query("q");
 
+        try {
+            ub.queryParam("foo", "bar");
+            fail();
+        } catch (IllegalStateException e) {
+            assertEquals("Cannot call queryParam() when this already has an unstructured query specified",
+                e.getMessage());
+        }
     }
 
     @Test
     public void testCantUseQueryAfterQueryParam() {
+        UrlBuilder ub = forHost("http", "foo.com").queryParam("foo", "bar");
 
+        try {
+            ub.query("q");
+
+            fail();
+        } catch (IllegalStateException e) {
+            assertEquals("Cannot call query() when this already has queryParam pairs specified", e.getMessage());
+        }
     }
 
     @Test
-    public void testQueryWithSpecialChars() {
+    public void testUnstructuredQueryWithNoSpecialChars() throws CharacterCodingException {
+        assertUrlEquals("http://foo.com?q", forHost("http", "foo.com").query("q").toUrlString());
+    }
 
+    @Test
+    public void testUnstructuredQueryWithOkSpecialChars() throws CharacterCodingException {
+        assertUrlEquals("http://foo.com?q?/&=+", forHost("http", "foo.com").query("q?/&=+").toUrlString());
+    }
+
+    @Test
+    public void testUnstructuredQueryWithEscapedSpecialChars() throws CharacterCodingException {
+        assertUrlEquals("http://foo.com?q%23", forHost("http", "foo.com").query("q#").toUrlString());
     }
 
     private void assertUrlBuilderRoundtrip(String url) {

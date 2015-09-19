@@ -29,7 +29,7 @@ public class PercentEncoderBenchmark {
 
     @State(Scope.Thread)
     public static class ThreadState {
-        PercentEncoder encoder = UrlPercentEncoders.getQueryEncoder();
+        PercentEncoder encoder = UrlPercentEncoders.getUnstructuredQueryEncoder();
         PercentEncoderOutputHandler noOpHandler = new NoOpOutputHandler();
         AccumXorOutputHandler accumXorHandler = new AccumXorOutputHandler();
     }

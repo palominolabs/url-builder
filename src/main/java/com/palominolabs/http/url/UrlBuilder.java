@@ -21,8 +21,9 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.palominolabs.http.url.UrlPercentEncoders.getFragmentEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getMatrixEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getPathEncoder;
-import static com.palominolabs.http.url.UrlPercentEncoders.getQueryEncoder;
+import static com.palominolabs.http.url.UrlPercentEncoders.getQueryParamEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getRegNameEncoder;
+import static com.palominolabs.http.url.UrlPercentEncoders.getUnstructuredQueryEncoder;
 
 /**
  * Builder for urls with url-encoding applied to path, query param, etc.
@@ -69,7 +70,8 @@ public final class UrlBuilder {
     private final PercentEncoder pathEncoder = getPathEncoder();
     private final PercentEncoder regNameEncoder = getRegNameEncoder();
     private final PercentEncoder matrixEncoder = getMatrixEncoder();
-    private final PercentEncoder queryEncoder = getQueryEncoder();
+    private final PercentEncoder queryParamEncoder = getQueryParamEncoder();
+    private final PercentEncoder unstructuredQueryEncoder = getUnstructuredQueryEncoder();
     private final PercentEncoder fragmentEncoder = getFragmentEncoder();
 
     @Nullable
@@ -94,7 +96,7 @@ public final class UrlBuilder {
      * Create a URL with an null port and UTF-8 encoding.
      *
      * @param scheme scheme (e.g. http)
-     * @param host   host in any of the valid syntaxes: reg-name ( a dns name), ipv4 literal (1.2.3.4), ipv6 literal
+     * @param host   host in any of the valid syntaxes: reg-name (a dns name), ipv4 literal (1.2.3.4), ipv6 literal
      *               ([::1]), excluding IPvFuture since no one uses that in practice
      * @return a url builder
      * @see UrlBuilder#forHost(String scheme, String host, int port)
@@ -115,7 +117,8 @@ public final class UrlBuilder {
     }
 
     /**
-     * Calls {@link UrlBuilder#fromUrl(URL, CharsetDecoder)} with a UTF-8 CharsetDecoder.
+     * Calls {@link UrlBuilder#fromUrl(URL, CharsetDecoder)} with a UTF-8 CharsetDecoder. The same semantics about the
+     * query string apply.
      *
      * @param url url to initialize builder with
      * @return a UrlBuilder containing the host, path, etc. from the url
@@ -129,6 +132,15 @@ public final class UrlBuilder {
 
     /**
      * Create a UrlBuilder initialized with the contents of a {@link URL}.
+     *
+     * The query string will be parsed into HTML4 query params if it can be separated into a <code>&amp;</code>-separated
+     * sequence of <code>key=value</code> pairs. The sequence of query params can then be appended to by continuing to
+     * call {@link UrlBuilder#queryParam(String, String)}. The concept of query params is only part of the HTML spec
+     * (and common HTTP usage), though, so it's perfectly legal to have a query string that is in some other form. To
+     * represent this case, if the aforementioned param-parsing attempt fails, the query string will be treated as just
+     * a monolithic, unstructured, string. In this case, calls to {@link UrlBuilder#queryParam(String, String)} on the
+     * resulting instance will throw IllegalStateException, and only calls to {@link UrlBuilder#query(String)}}, which
+     * replaces the entire query string, are allowed.
      *
      * @param url            url to initialize builder with
      * @param charsetDecoder the decoder to decode encoded bytes with (except for reg names, which are always UTF-8)
@@ -201,7 +213,9 @@ public final class UrlBuilder {
      * Using query strings to encode key=value pairs is not part of the URI/URL specification; it is specified by
      * http://www.w3.org/TR/html401/interact/forms.html#form-content-type.
      *
-     * If you use this method to build a query string, you cannot also use {@link UrlBuilder#query(String)}.
+     * If you use this method to build a query string, or created this builder from a url with an unstructed query
+     * string, you cannot also use {@link UrlBuilder#query(String)}. See {@link UrlBuilder#fromUrl(URL,
+     * CharsetDecoder)}.
      *
      * @param name  param name
      * @param value param value
@@ -209,15 +223,21 @@ public final class UrlBuilder {
      */
     @Nonnull
     public UrlBuilder queryParam(@Nonnull String name, @Nonnull String value) {
+        if (unstructuredQuery != null) {
+            throw new IllegalStateException(
+                "Cannot call queryParam() when this already has an unstructured query specified");
+        }
+
         queryParams.add(Pair.of(name, value));
         return this;
     }
 
     /**
-     * Add a complete query string of arbitrary structure. If you use this method, you cannot also use {@link
-     * UrlBuilder#queryParam(String, String)}.
+     * Add a complete query string of arbitrary structure. This is useful when you want to specify a query string that
+     * is not of key=value format.
      *
-     * This is useful when you want to specify a query string that is not of key=value format.
+     * If you use this method, you cannot also use {@link UrlBuilder#queryParam(String, String)}. See {@link
+     * UrlBuilder#fromUrl(URL, CharsetDecoder)}.
      *
      * @param query Complete URI query, as specified by https://tools.ietf.org/html/rfc3986#section-3.4
      * @return this
@@ -315,13 +335,16 @@ public final class UrlBuilder {
             Iterator<Pair<String, String>> qpIter = queryParams.iterator();
             while (qpIter.hasNext()) {
                 Pair<String, String> queryParam = qpIter.next();
-                buf.append(queryEncoder.encode(queryParam.getKey()));
+                buf.append(queryParamEncoder.encode(queryParam.getKey()));
                 buf.append('=');
-                buf.append(queryEncoder.encode(queryParam.getValue()));
+                buf.append(queryParamEncoder.encode(queryParam.getValue()));
                 if (qpIter.hasNext()) {
                     buf.append('&');
                 }
             }
+        } else if (unstructuredQuery != null) {
+            buf.append("?");
+            buf.append(unstructuredQueryEncoder.encode(unstructuredQuery));
         }
 
         if (fragment != null) {

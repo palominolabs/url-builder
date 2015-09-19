@@ -4,8 +4,8 @@
 
 package com.palominolabs.http.url;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.BitSet;
+import javax.annotation.concurrent.ThreadSafe;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static java.nio.charset.CodingErrorAction.REPLACE;
@@ -24,7 +24,8 @@ public final class UrlPercentEncoders {
 
     private static final BitSet PATH_BIT_SET = new BitSet();
     private static final BitSet MATRIX_BIT_SET = new BitSet();
-    private static final BitSet QUERY_BIT_SET = new BitSet();
+    private static final BitSet UNSTRUCTURED_QUERY_BIT_SET = new BitSet();
+    private static final BitSet QUERY_PARAM_BIT_SET = new BitSet();
     private static final BitSet FRAGMENT_BIT_SET = new BitSet();
 
     static {
@@ -42,16 +43,19 @@ public final class UrlPercentEncoders {
         MATRIX_BIT_SET.clear((int) ';');
         MATRIX_BIT_SET.clear((int) '=');
 
+        // at this point it represents RFC 3986 'query'.
+        addQuery(UNSTRUCTURED_QUERY_BIT_SET);
+
+
         /*
-        * at this point it represents RFC 3986 'query'.
-        * Remove delimiters for HTML queries
-        * http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1 also specifies that "+" can mean space in a query,
-        * so we will make sure to say that '+' is not safe to leave as-is
-        */
-        addQuery(QUERY_BIT_SET);
-        QUERY_BIT_SET.clear((int) '=');
-        QUERY_BIT_SET.clear((int) '&');
-        QUERY_BIT_SET.clear((int) '+');
+         * Create more stringent requirements for HTML4 queries: remove delimiters for HTML queries so that key=value
+         * pairs can be used. http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1 also specifies that "+" can
+         * mean space in a query, so we will make sure to say that '+' is not safe to leave as-is
+         */
+        QUERY_PARAM_BIT_SET.or(UNSTRUCTURED_QUERY_BIT_SET);
+        QUERY_PARAM_BIT_SET.clear((int) '=');
+        QUERY_PARAM_BIT_SET.clear((int) '&');
+        QUERY_PARAM_BIT_SET.clear((int) '+');
 
         addFragment(FRAGMENT_BIT_SET);
     }
@@ -71,8 +75,13 @@ public final class UrlPercentEncoders {
             .onUnmappableCharacter(REPLACE));
     }
 
-    public static PercentEncoder getQueryEncoder() {
-        return new PercentEncoder(QUERY_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
+    public static PercentEncoder getUnstructuredQueryEncoder() {
+        return new PercentEncoder(UNSTRUCTURED_QUERY_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
+            .onUnmappableCharacter(REPLACE));
+    }
+
+    public static PercentEncoder getQueryParamEncoder() {
+        return new PercentEncoder(QUERY_PARAM_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
             .onUnmappableCharacter(REPLACE));
     }
 
