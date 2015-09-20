@@ -208,7 +208,7 @@ public final class UrlBuilder {
     }
 
     /**
-     * Add a query parameter. Query parameters will be encoded in the order added.
+     * Add an HTML query parameter. Query parameters will be encoded in the order added.
      *
      * Using query strings to encode key=value pairs is not part of the URI/URL specification; it is specified by
      * http://www.w3.org/TR/html401/interact/forms.html#form-content-type.
@@ -233,7 +233,7 @@ public final class UrlBuilder {
     }
 
     /**
-     * Add a complete query string of arbitrary structure, replacing any previously set query. This is useful when you
+     * Set the complete query string of arbitrary structure, replacing any previously set query. This is useful when you
      * want to specify a query string that is not of key=value format.
      *
      * If you use this method, you cannot also use {@link UrlBuilder#queryParam(String, String)}. See {@link
@@ -380,7 +380,8 @@ public final class UrlBuilder {
                     break;
                 }
 
-                pairs.add(Pair.of(decoder.decode(queryParamChunks[0]), decoder.decode(queryParamChunks[1])));
+                pairs.add(Pair.of(decoder.decode(queryParamChunks[0]),
+                    decoder.decode(queryParamChunks[1])));
             }
 
             if (parseOk) {
@@ -388,7 +389,7 @@ public final class UrlBuilder {
                     builder.queryParam(pair.getKey(), pair.getValue());
                 }
             } else {
-                builder.query(q);
+                builder.query(decoder.decode(q));
             }
         }
     }

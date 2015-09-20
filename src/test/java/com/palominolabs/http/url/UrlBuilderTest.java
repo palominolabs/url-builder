@@ -331,8 +331,8 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testFromUrlUnstructuredQuery() throws MalformedURLException, CharacterCodingException {
-        assertUrlBuilderRoundtrip("http://foo.com/foo?query==&");
+    public void testFromUrlUnstructuredQueryWithEscapedChars() throws MalformedURLException, CharacterCodingException {
+        assertUrlBuilderRoundtrip("http://foo.com/foo?query==&%23");
     }
 
     @Test
