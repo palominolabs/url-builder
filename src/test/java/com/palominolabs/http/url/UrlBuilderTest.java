@@ -369,12 +369,12 @@ public final class UrlBuilderTest {
 
     @Test
     public void testUnstructuredQueryWithOkSpecialChars() throws CharacterCodingException {
-        assertUrlEquals("http://foo.com?q?/&=+", forHost("http", "foo.com").unstructuredQuery("q?/&=+").toUrlString());
+        assertUrlEquals("http://foo.com?q?/&=", forHost("http", "foo.com").unstructuredQuery("q?/&=").toUrlString());
     }
 
     @Test
     public void testUnstructuredQueryWithEscapedSpecialChars() throws CharacterCodingException {
-        assertUrlEquals("http://foo.com?q%23", forHost("http", "foo.com").unstructuredQuery("q#").toUrlString());
+        assertUrlEquals("http://foo.com?q%23%2B", forHost("http", "foo.com").unstructuredQuery("q#+").toUrlString());
     }
 
     @Test

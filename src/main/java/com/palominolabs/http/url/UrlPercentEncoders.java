@@ -43,51 +43,52 @@ public final class UrlPercentEncoders {
         MATRIX_BIT_SET.clear((int) ';');
         MATRIX_BIT_SET.clear((int) '=');
 
-        // at this point it represents RFC 3986 'query'.
+        /*
+         * At this point it represents RFC 3986 'query'. http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1 also
+         * specifies that "+" can mean space in a query, so we will make sure to say that '+' is not safe to leave as-is
+         */
         addQuery(UNSTRUCTURED_QUERY_BIT_SET);
-
+        UNSTRUCTURED_QUERY_BIT_SET.clear((int) '+');
 
         /*
-         * Create more stringent requirements for HTML4 queries: remove delimiters for HTML queries so that key=value
-         * pairs can be used. http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1 also specifies that "+" can
-         * mean space in a query, so we will make sure to say that '+' is not safe to leave as-is
+         * Create more stringent requirements for HTML4 queries: remove delimiters for HTML query params so that key=value
+         * pairs can be used.
          */
         QUERY_PARAM_BIT_SET.or(UNSTRUCTURED_QUERY_BIT_SET);
         QUERY_PARAM_BIT_SET.clear((int) '=');
         QUERY_PARAM_BIT_SET.clear((int) '&');
-        QUERY_PARAM_BIT_SET.clear((int) '+');
 
         addFragment(FRAGMENT_BIT_SET);
     }
 
     public static PercentEncoder getRegNameEncoder() {
         return new PercentEncoder(REG_NAME_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
-            .onUnmappableCharacter(REPLACE));
+                .onUnmappableCharacter(REPLACE));
     }
 
     public static PercentEncoder getPathEncoder() {
         return new PercentEncoder(PATH_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
-            .onUnmappableCharacter(REPLACE));
+                .onUnmappableCharacter(REPLACE));
     }
 
     public static PercentEncoder getMatrixEncoder() {
         return new PercentEncoder(MATRIX_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
-            .onUnmappableCharacter(REPLACE));
+                .onUnmappableCharacter(REPLACE));
     }
 
     public static PercentEncoder getUnstructuredQueryEncoder() {
         return new PercentEncoder(UNSTRUCTURED_QUERY_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
-            .onUnmappableCharacter(REPLACE));
+                .onUnmappableCharacter(REPLACE));
     }
 
     public static PercentEncoder getQueryParamEncoder() {
         return new PercentEncoder(QUERY_PARAM_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
-            .onUnmappableCharacter(REPLACE));
+                .onUnmappableCharacter(REPLACE));
     }
 
     public static PercentEncoder getFragmentEncoder() {
         return new PercentEncoder(FRAGMENT_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
-            .onUnmappableCharacter(REPLACE));
+                .onUnmappableCharacter(REPLACE));
     }
 
     private UrlPercentEncoders() {
