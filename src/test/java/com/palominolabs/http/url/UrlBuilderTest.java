@@ -61,10 +61,10 @@ public final class UrlBuilderTest {
     @Test
     public void testMatrixWithReserved() throws CharacterCodingException {
         UrlBuilder ub = forHost("http", "foo.com")
-            .pathSegment("foo")
-            .matrixParam("foo", "bar")
-            .matrixParam("res;=?#/erved", "value")
-            .pathSegment("baz");
+                .pathSegment("foo")
+                .matrixParam("foo", "bar")
+                .matrixParam("res;=?#/erved", "value")
+                .pathSegment("baz");
         assertUrlEquals("http://foo.com/foo;foo=bar;res%3B%3D%3F%23%2Ferved=value/baz", ub.toUrlString());
     }
 
@@ -123,9 +123,9 @@ public final class UrlBuilderTest {
         UrlBuilder ub = forHost("http", "foo.com");
 
         ub.pathSegment("has+plus")
-            .matrixParam("plusMtx", "pl+us")
-            .queryParam("plusQp", "pl+us")
-            .fragment("plus+frag");
+                .matrixParam("plusMtx", "pl+us")
+                .queryParam("plusQp", "pl+us")
+                .fragment("plus+frag");
 
         assertUrlEquals("http://foo.com/has+plus;plusMtx=pl+us?plusQp=pl%2Bus#plus+frag", ub.toUrlString());
     }
@@ -150,7 +150,7 @@ public final class UrlBuilderTest {
         ub.fragment("zomg it's a fragment");
 
         assertEquals("https://foo.bar.com:3333/foo/bar;mtx1=val1;mtx2=val2?q1=v1&q2=v2#zomg%20it's%20a%20fragment",
-            ub.toUrlString());
+                ub.toUrlString());
     }
 
     @Test
@@ -199,7 +199,7 @@ public final class UrlBuilderTest {
     @Test
     public void testForceTrailingSlashWithQueryParams() throws CharacterCodingException {
         UrlBuilder ub =
-            forHost("https", "foo.com").forceTrailingSlash().pathSegments("a", "b", "c").queryParam("foo", "bar");
+                forHost("https", "foo.com").forceTrailingSlash().pathSegments("a", "b", "c").queryParam("foo", "bar");
 
         assertUrlEquals("https://foo.com/a/b/c/?foo=bar", ub.toUrlString());
     }
@@ -215,10 +215,10 @@ public final class UrlBuilderTest {
     public void testIntermingledMatrixParamsAndPathSegments() throws CharacterCodingException {
 
         UrlBuilder ub = forHost("http", "foo.com")
-            .pathSegments("seg1", "seg2")
-            .matrixParam("m1", "v1")
-            .pathSegment("seg3")
-            .matrixParam("m2", "v2");
+                .pathSegments("seg1", "seg2")
+                .matrixParam("m1", "v1")
+                .pathSegment("seg3")
+                .matrixParam("m2", "v2");
 
         assertUrlEquals("http://foo.com/seg1/seg2;m1=v1/seg3;m2=v2", ub.toUrlString());
     }
@@ -226,7 +226,7 @@ public final class UrlBuilderTest {
     @Test
     public void testFromUrlWithEverything() {
         String orig =
-            "https://foo.bar.com:3333/foo/ba%20r;mtx1=val1;mtx2=val%202/seg%203;m2=v2?q1=v1&q2=v%202#zomg%20it's%20a%20fragment";
+                "https://foo.bar.com:3333/foo/ba%20r;mtx1=val1;mtx2=val%202/seg%203;m2=v2?q1=v1&q2=v%202#zomg%20it's%20a%20fragment";
         assertUrlBuilderRoundtrip(orig);
     }
 
@@ -337,14 +337,14 @@ public final class UrlBuilderTest {
 
     @Test
     public void testCantUseQueryParamAfterQuery() {
-        UrlBuilder ub = forHost("http", "foo.com").query("q");
+        UrlBuilder ub = forHost("http", "foo.com").unstructuredQuery("q");
 
         try {
             ub.queryParam("foo", "bar");
             fail();
         } catch (IllegalStateException e) {
             assertEquals("Cannot call queryParam() when this already has an unstructured query specified",
-                e.getMessage());
+                    e.getMessage());
         }
     }
 
@@ -353,27 +353,62 @@ public final class UrlBuilderTest {
         UrlBuilder ub = forHost("http", "foo.com").queryParam("foo", "bar");
 
         try {
-            ub.query("q");
+            ub.unstructuredQuery("q");
 
             fail();
         } catch (IllegalStateException e) {
-            assertEquals("Cannot call query() when this already has queryParam pairs specified", e.getMessage());
+            assertEquals("Cannot call unstructuredQuery() when this already has queryParam pairs specified",
+                    e.getMessage());
         }
     }
 
     @Test
     public void testUnstructuredQueryWithNoSpecialChars() throws CharacterCodingException {
-        assertUrlEquals("http://foo.com?q", forHost("http", "foo.com").query("q").toUrlString());
+        assertUrlEquals("http://foo.com?q", forHost("http", "foo.com").unstructuredQuery("q").toUrlString());
     }
 
     @Test
     public void testUnstructuredQueryWithOkSpecialChars() throws CharacterCodingException {
-        assertUrlEquals("http://foo.com?q?/&=+", forHost("http", "foo.com").query("q?/&=+").toUrlString());
+        assertUrlEquals("http://foo.com?q?/&=+", forHost("http", "foo.com").unstructuredQuery("q?/&=+").toUrlString());
     }
 
     @Test
     public void testUnstructuredQueryWithEscapedSpecialChars() throws CharacterCodingException {
-        assertUrlEquals("http://foo.com?q%23", forHost("http", "foo.com").query("q#").toUrlString());
+        assertUrlEquals("http://foo.com?q%23", forHost("http", "foo.com").unstructuredQuery("q#").toUrlString());
+    }
+
+    @Test
+    public void testClearQueryRemovesQueryParam() throws CharacterCodingException {
+        UrlBuilder ub = forHost("http", "host")
+                .queryParam("foo", "bar")
+                .clearQuery();
+        assertUrlEquals("http://host", ub.toUrlString());
+    }
+
+    @Test
+    public void testClearQueryRemovesUnstructuredQuery() throws CharacterCodingException {
+        UrlBuilder ub = forHost("http", "host")
+                .unstructuredQuery("foobar")
+                .clearQuery();
+        assertUrlEquals("http://host", ub.toUrlString());
+    }
+
+    @Test
+    public void testClearQueryAfterQueryParamAllowsQuery() throws CharacterCodingException {
+        UrlBuilder ub = forHost("http", "host")
+                .queryParam("foo", "bar")
+                .clearQuery()
+                .unstructuredQuery("foobar");
+        assertUrlEquals("http://host?foobar", ub.toUrlString());
+    }
+
+    @Test
+    public void testClearQueryAfterQueryAllowsQueryParam() throws CharacterCodingException {
+        UrlBuilder ub = forHost("http", "host")
+                .unstructuredQuery("foobar")
+                .clearQuery()
+                .queryParam("foo", "bar");
+        assertUrlEquals("http://host?foo=bar", ub.toUrlString());
     }
 
     private void assertUrlBuilderRoundtrip(String url) {

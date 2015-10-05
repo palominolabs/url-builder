@@ -39,14 +39,14 @@ public final class UrlBuilder {
      * IPv6 address, cribbed from http://stackoverflow.com/questions/46146/what-are-the-java-regular-expressions-for-matching-ipv4-and-ipv6-strings
      */
     private static final Pattern IPV6_PATTERN = Pattern
-        .compile(
-            "\\A\\[((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)]\\z");
+            .compile(
+                    "\\A\\[((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)]\\z");
 
     /**
      * IPv4 dotted quad
      */
     private static final Pattern IPV4_PATTERN = Pattern
-        .compile("\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z");
+            .compile("\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z");
 
     @Nonnull
     private final String scheme;
@@ -140,7 +140,7 @@ public final class UrlBuilder {
      * is in some other form. To represent this case, if the aforementioned param-parsing attempt fails, the query
      * string will be treated as just a monolithic, unstructured, string. In this case, calls to {@link
      * UrlBuilder#queryParam(String, String)} on the resulting instance will throw IllegalStateException, and only calls
-     * to {@link UrlBuilder#query(String)}}, which replaces the entire query string, are allowed.
+     * to {@link UrlBuilder#unstructuredQuery(String)}}, which replaces the entire query string, are allowed.
      *
      * @param url            url to initialize builder with
      * @param charsetDecoder the decoder to decode encoded bytes with (except for reg names, which are always UTF-8)
@@ -151,7 +151,7 @@ public final class UrlBuilder {
      */
     @Nonnull
     public static UrlBuilder fromUrl(@Nonnull URL url, @Nonnull CharsetDecoder charsetDecoder) throws
-        CharacterCodingException {
+            CharacterCodingException {
 
         PercentDecoder decoder = new PercentDecoder(charsetDecoder);
         // reg names must be encoded UTF-8
@@ -213,9 +213,9 @@ public final class UrlBuilder {
      * Using query strings to encode key=value pairs is not part of the URI/URL specification; it is specified by
      * http://www.w3.org/TR/html401/interact/forms.html#form-content-type.
      *
-     * If you use this method to build a query string, or created this builder from a url with an unstructed query
-     * string, you cannot also use {@link UrlBuilder#query(String)}. See {@link UrlBuilder#fromUrl(URL,
-     * CharsetDecoder)}.
+     * If you use this method to build a query string, or created this builder from a url with a query string that can
+     * successfully be parsed into query param pairs, you cannot subsequently use {@link
+     * UrlBuilder#unstructuredQuery(String)}. See {@link UrlBuilder#fromUrl(URL, CharsetDecoder)}.
      *
      * @param name  param name
      * @param value param value
@@ -225,7 +225,7 @@ public final class UrlBuilder {
     public UrlBuilder queryParam(@Nonnull String name, @Nonnull String value) {
         if (unstructuredQuery != null) {
             throw new IllegalStateException(
-                "Cannot call queryParam() when this already has an unstructured query specified");
+                    "Cannot call queryParam() when this already has an unstructured query specified");
         }
 
         queryParams.add(Pair.of(name, value));
@@ -233,22 +233,42 @@ public final class UrlBuilder {
     }
 
     /**
-     * Set the complete query string of arbitrary structure, replacing any previously set query. This is useful when you
-     * want to specify a query string that is not of key=value format.
+     * Set the complete query string of arbitrary structure. This is useful when you want to specify a query string that
+     * is not of key=value format. If the query has previously been set via this method, subsequent calls will overwrite
+     * that query.
      *
-     * If you use this method, you cannot also use {@link UrlBuilder#queryParam(String, String)}. See {@link
-     * UrlBuilder#fromUrl(URL, CharsetDecoder)}.
+     * If you use this method, or create a builder from a URL whose query is not parseable into query param pairs, you
+     * cannot subsequently use {@link UrlBuilder#queryParam(String, String)}. See {@link UrlBuilder#fromUrl(URL,
+     * CharsetDecoder)}.
      *
      * @param query Complete URI query, as specified by https://tools.ietf.org/html/rfc3986#section-3.4
      * @return this
      */
     @Nonnull
-    public UrlBuilder query(@Nonnull String query) {
+    public UrlBuilder unstructuredQuery(@Nonnull String query) {
         if (!queryParams.isEmpty()) {
-            throw new IllegalStateException("Cannot call query() when this already has queryParam pairs specified");
+            throw new IllegalStateException(
+                    "Cannot call unstructuredQuery() when this already has queryParam pairs specified");
         }
 
         unstructuredQuery = query;
+
+        return this;
+    }
+
+    /**
+     * Clear the unstructured query and any query params.
+     *
+     * Since the query / query param situation is a little complicated, this method will let you remove all query
+     * information and start again from scratch. This may be useful when taking an existing url, parsing it into a
+     * builder, and then re-doing its query params, for instance.
+     *
+     * @return this
+     */
+    @Nonnull
+    public UrlBuilder clearQuery() {
+        queryParams.clear();
+        unstructuredQuery = null;
 
         return this;
     }
@@ -364,7 +384,7 @@ public final class UrlBuilder {
      * @throws CharacterCodingException
      */
     private static void buildFromQuery(UrlBuilder builder, PercentDecoder decoder, URL url) throws
-        CharacterCodingException {
+            CharacterCodingException {
         if (url.getQuery() != null) {
             String q = url.getQuery();
 
@@ -381,7 +401,7 @@ public final class UrlBuilder {
                 }
 
                 pairs.add(Pair.of(decoder.decode(queryParamChunks[0]),
-                    decoder.decode(queryParamChunks[1])));
+                        decoder.decode(queryParamChunks[1])));
             }
 
             if (parseOk) {
@@ -389,7 +409,7 @@ public final class UrlBuilder {
                     builder.queryParam(pair.getKey(), pair.getValue());
                 }
             } else {
-                builder.query(decoder.decode(q));
+                builder.unstructuredQuery(decoder.decode(q));
             }
         }
     }
@@ -403,7 +423,7 @@ public final class UrlBuilder {
      * @throws CharacterCodingException
      */
     private static void buildFromPath(UrlBuilder builder, PercentDecoder decoder, URL url) throws
-        CharacterCodingException {
+            CharacterCodingException {
         for (String pathChunk : url.getPath().split("/")) {
             if (pathChunk.equals("")) {
                 continue;
@@ -435,11 +455,10 @@ public final class UrlBuilder {
     }
 
     private static void buildFromMatrixParamChunk(PercentDecoder decoder, UrlBuilder ub, String pathMatrixChunk) throws
-        CharacterCodingException {
+            CharacterCodingException {
         String[] mtxPair = pathMatrixChunk.split("=");
         if (mtxPair.length != 2) {
-            throw new IllegalArgumentException(
-                "Malformed matrix param: <" + pathMatrixChunk + ">");
+            throw new IllegalArgumentException("Malformed matrix param: <" + pathMatrixChunk + ">");
         }
 
         String mtxName = mtxPair[0];
