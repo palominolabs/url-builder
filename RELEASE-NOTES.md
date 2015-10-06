@@ -1,0 +1,11 @@
+- 1.1.1
+    - Performance tuning
+    - Allow unstructured HTTP query (not in `key=value&key=value` form)
+    - Switch to releasing artifacts on Bintray
+- 1.1.0
+    - Expose PercentEncoder as public
+    - Allow initializing a UrlBuilder from a `java.net.URL`
+- 1.0.2
+    - Java 6 compatible
+- 1.0.1
+    - Matrix params specified per path segment

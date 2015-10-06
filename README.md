@@ -2,6 +2,8 @@ Use this library to safely create valid, correctly encoded URL strings with a fl
 
 # Usage
 
+Artifacts are released in [Bintray](https://bintray.com/). For gradle, use the `jcenter()` repository. For maven, [go here](https://bintray.com/bintray/jcenter) and click "Set me up".
+
 Add this to the `dependencies` block in your `build.gradle`:
 
     compile 'com.palominolabs.http:url-builder:VERSION'
@@ -44,6 +46,6 @@ URL encoding is also not something that can be done once you've formed a complet
 
  Since the URLs that we use in practice for HTTP have somewhat different rules than "generic" URLs, UrlBuilder errs on the side of usefulness for HTTP-specific URLs. Notably, this means that '+' is percent-encoded to avoid being interpreted as a space. Also, in the URL/URI specs, the query string's format is not defined, but in practice it is used to hold `key=value` pairs separated by `&`.
 
- # Building
+# Building
 
- Run `./gradlew build`.
+Run `./gradlew build`.
