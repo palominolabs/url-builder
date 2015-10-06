@@ -1,0 +1,18 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'me.champeau.gradle:jmh-gradle-plugin:0.2.0'
+  }
+}
+
+apply plugin: 'me.champeau.gradle.jmh'
+
+dependencies {
+  compile project(':url-builder')
+
+  jmh "org.openjdk.jmh:jmh-core:${depVersions.jmh}"
+  jmh "org.openjdk.jmh:jmh-generator-annprocess:${depVersions.jmh}"
+  compile "org.openjdk.jmh:jmh-core:$depVersions.jmh"
+}

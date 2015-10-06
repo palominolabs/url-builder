@@ -1,1 +1,3 @@
-rootProject.name = 'url-builder'
+rootProject.name = 'url-builder-root'
+
+include 'url-builder', 'url-builder-benchmarks'
