@@ -17,7 +17,7 @@ public class PercentDecoderBenchmark {
     static final String LARGE_STRING_ENCODED;
 
     static {
-        PercentEncoder encoder = UrlPercentEncoders.getQueryEncoder();
+        PercentEncoder encoder = UrlPercentEncoders.getUnstructuredQueryEncoder();
         try {
             SMALL_STRING_ENCODED = encoder.encode(SMALL_STRING_MIX);
         } catch (CharacterCodingException e) {

@@ -46,6 +46,7 @@ dependencies {
 
   jmh "org.openjdk.jmh:jmh-core:${depVersions.jmh}"
   jmh "org.openjdk.jmh:jmh-generator-annprocess:${depVersions.jmh}"
+  compile "org.openjdk.jmh:jmh-core:$depVersions.jmh"
 }
 
 repositories {

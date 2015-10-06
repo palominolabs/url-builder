@@ -63,7 +63,7 @@ class PercentDecoderTest {
   @Test
   @CompileStatic
   public void testRandomStrings() {
-    PercentEncoder encoder = UrlPercentEncoders.getQueryEncoder()
+    PercentEncoder encoder = UrlPercentEncoders.getUnstructuredQueryEncoder()
     Random rand = new Random()
 
     def seed = rand.nextLong()
