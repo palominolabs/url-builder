@@ -1,5 +1,7 @@
 Use this library to safely create valid, correctly encoded URL strings with a fluent API.
 
+[![Build Status](https://semaphoreci.com/api/v1/projects/d30d48ce-7476-40e3-ad56-7536be27f6bb/317247/badge.svg)](https://semaphoreci.com/marshallpierce/url-builder)
+
 # Usage
 
 Artifacts are released in [Bintray](https://bintray.com/). For gradle, use the `jcenter()` repository. For maven, [go here](https://bintray.com/bintray/jcenter) and click "Set me up".
