@@ -1,7 +1,18 @@
+import java.time.Instant
+
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.3.1'
+  }
+}
+
 apply plugin: 'groovy'
-apply plugin: 'maven'
-apply plugin: 'signing'
 apply plugin: 'findbugs'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven-publish'
 
 dependencies {
   compile 'com.google.code.findbugs:jsr305:3.0.0'
@@ -17,70 +28,57 @@ dependencies {
   testCompile 'junit:junit:4.12'
 
   testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
-
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
+task sourceJar(type: Jar, dependsOn: classes) {
   from sourceSets.main.allJava
-  classifier = 'sources'
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
   from javadoc.destinationDir
-  classifier = 'javadoc'
 }
 
-artifacts {
-  // register in 'archives' config so they will be signed
-  archives sourcesJar
-  archives javadocJar
-}
 
-signing {
-  required { gradle.taskGraph.hasTask("uploadArchives") }
-  sign configurations.archives
-}
+group = 'com.palominolabs.http'
+version = '1.1.1-SNAPSHOT'
+ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
-// Set sonatypeUsername and sonatypePassword in your ~/.gradle/gradle.properties to be able to use this.
-uploadArchives {
-  repositories {
-    mavenDeployer {
-      beforeDeployment { deployment -> signing.signPom(deployment) }
+// build a pom
+publishing {
+  publications {
+    bintray(MavenPublication) {
+      from components.java
+      groupId project.group
+      artifactId project.name
+      version project.version
 
-      repository(url: isReleaseVersion ?
-          "https://oss.sonatype.org/service/local/staging/deploy/maven2/" :
-          "https://oss.sonatype.org/content/repositories/snapshots/") {
-        def u = project.hasProperty('sonatypeUsername') ? sonatypeUsername : 'FIXME'
-        def p = project.hasProperty('sonatypePassword') ? sonatypePassword : 'FIXME'
-        authentication(userName: u, password: p)
+      artifact sourceJar {
+        classifier 'sources'
       }
 
-      pom.project {
-        name 'url-builder'
-        packaging 'jar'
-        description 'Create properly-encoded URLs with a builder-style API.'
-        url 'https://github.com/palominolabs/url-builder'
+      artifact javadocJar {
+        classifier 'javadoc'
+      }
+    }
+  }
+}
 
-        scm {
-          url 'scm:git@github.com:palominolabs/url-builder.git'
-          connection 'scm:git@github.com:palominolabs/url-builder.git'
-          developerConnection 'scm:git@github.com:palominolabs/url-builder.git'
-        }
+bintray {
+  user = rootProject.hasProperty('bintrayUser') ? rootProject.property('bintrayUser') : 'FIXME'
+  key = rootProject.hasProperty('bintrayApiKey') ? rootProject.property('bintrayApiKey') : 'FIXME'
+  publications = ['bintray']
 
-        licenses {
-          license {
-            name 'Copyfree Open Innovation License'
-            url 'http://copyfree.org/content/standard/licenses/coil/license.txt'
-            distribution 'repo'
-          }
-        }
+  pkg {
+    repo = 'maven'
+    licenses = ['Copyfree']
+    vcsUrl = 'https://github.com/palominolabs/url-builder'
+    name = 'com.palominolabs.http:url-builder'
 
-        developers {
-          developer {
-            id 'marshallpierce'
-            name 'Marshall Pierce'
-          }
-        }
+    version {
+      name = project.version
+      released = Date.from(Instant.now())
+      if (project.isReleaseVersion) {
+        vcsTag = 'v' + project.version
       }
     }
   }

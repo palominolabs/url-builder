@@ -13,13 +13,7 @@ subprojects {
         jmh  : '1.11.1'
     ]
   }
-
-  group = 'com.palominolabs.http'
-  version = '1.1.1-SNAPSHOT'
-  ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 }
-
-
 
 task wrapper(type: Wrapper) {
   gradleVersion = '2.7'
