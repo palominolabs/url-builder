@@ -8,19 +8,23 @@ Artifacts are released in [Bintray](https://bintray.com/). For gradle, use the `
 
 Add this to the `dependencies` block in your `build.gradle`:
 
-    compile 'com.palominolabs.http:url-builder:VERSION'
+```groovy
+compile 'com.palominolabs.http:url-builder:VERSION'
+```
 
 where `VERSION` is the latest released version.  If you're using Maven, know that your life could be greatly improved by switching to Gradle and use this dependency block:
 
-    <dependency>
-        <groupId>com.palominolabs.http</groupId>
-        <artifactId>url-builder</artifactId>
-        <version>VERSION</version>
-    </dependency>
+```xml
+<dependency>
+    <groupId>com.palominolabs.http</groupId>
+    <artifactId>url-builder</artifactId>
+    <version>VERSION</version>
+</dependency>
+```
 
 # Example
 
-```
+```java
 // showcase the different encoding rules used on different URL components
 UrlBuilder.forHost("http", "foo.com")
     .pathSegment("with spaces")
@@ -33,7 +37,6 @@ UrlBuilder.forHost("http", "foo.com")
 
 // produces:
 // http://foo.com/with%20spaces/path/with/varArgs/&=%3F%2F;matrix=param%3F?fancy%20%2B%20name=fancy?%3Dvalue#%23?=
-
 ```
 
 # Motivation
