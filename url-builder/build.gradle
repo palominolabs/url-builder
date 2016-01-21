@@ -1,5 +1,3 @@
-import java.time.Instant
-
 buildscript {
   repositories {
     jcenter()
@@ -76,7 +74,7 @@ bintray {
 
     version {
       name = project.version
-      released = Date.from(Instant.now())
+      released = new Date()
       if (project.isReleaseVersion) {
         vcsTag = 'v' + project.version
       }
