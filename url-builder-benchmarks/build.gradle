@@ -1,13 +1,6 @@
-buildscript {
-  repositories {
-    jcenter()
-  }
-  dependencies {
-    classpath 'me.champeau.gradle:jmh-gradle-plugin:0.2.0'
-  }
+plugins {
+  id 'me.champeau.gradle.jmh' version '0.2.0'
 }
-
-apply plugin: 'me.champeau.gradle.jmh'
 
 dependencies {
   compile project(':url-builder')
