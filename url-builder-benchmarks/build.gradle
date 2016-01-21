@@ -2,10 +2,10 @@ plugins {
   id 'me.champeau.gradle.jmh' version '0.2.0'
 }
 
+jmh {
+  jmhVersion = '1.11.3'
+}
+
 dependencies {
   compile project(':url-builder')
-
-  jmh "org.openjdk.jmh:jmh-core:${depVersions.jmh}"
-  jmh "org.openjdk.jmh:jmh-generator-annprocess:${depVersions.jmh}"
-  compile "org.openjdk.jmh:jmh-core:$depVersions.jmh"
 }
