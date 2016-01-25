@@ -5,6 +5,11 @@
 package com.palominolabs.http.url;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.tuple.Pair;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
@@ -12,10 +17,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.NotThreadSafe;
-import org.apache.commons.lang3.tuple.Pair;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.palominolabs.http.url.UrlPercentEncoders.getFragmentEncoder;
@@ -316,6 +317,24 @@ public final class UrlBuilder {
         return this;
     }
 
+    public String getPathString() throws CharacterCodingException {
+        StringBuilder path = new StringBuilder();
+
+        for (PathSegment pathSegment : pathSegments) {
+            path.append('/');
+            path.append(pathEncoder.encode(pathSegment.segment));
+
+            for (Pair<String, String> matrixParam : pathSegment.matrixParams) {
+                path.append(';');
+                path.append(matrixEncoder.encode(matrixParam.getKey()));
+                path.append('=');
+                path.append(matrixEncoder.encode(matrixParam.getValue()));
+            }
+        }
+
+        return path.toString();
+    }
+
     /**
      * Encode the current builder state into a URL string.
      *
@@ -334,17 +353,7 @@ public final class UrlBuilder {
             buf.append(port);
         }
 
-        for (PathSegment pathSegment : pathSegments) {
-            buf.append('/');
-            buf.append(pathEncoder.encode(pathSegment.segment));
-
-            for (Pair<String, String> matrixParam : pathSegment.matrixParams) {
-                buf.append(';');
-                buf.append(matrixEncoder.encode(matrixParam.getKey()));
-                buf.append('=');
-                buf.append(matrixEncoder.encode(matrixParam.getValue()));
-            }
-        }
+        buf.append(getPathString());
 
         if (forceTrailingSlash) {
             buf.append('/');
