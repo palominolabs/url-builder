@@ -10,9 +10,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.MalformedInputException;
+import java.nio.charset.UnmappableCharacterException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -317,22 +320,64 @@ public final class UrlBuilder {
         return this;
     }
 
-    public String getPathString() throws CharacterCodingException {
-        StringBuilder path = new StringBuilder();
-
+    private void appendPath(StringBuilder buf) throws CharacterCodingException {
         for (PathSegment pathSegment : pathSegments) {
-            path.append('/');
-            path.append(pathEncoder.encode(pathSegment.segment));
+            buf.append('/');
+            buf.append(pathEncoder.encode(pathSegment.segment));
 
             for (Pair<String, String> matrixParam : pathSegment.matrixParams) {
-                path.append(';');
-                path.append(matrixEncoder.encode(matrixParam.getKey()));
-                path.append('=');
-                path.append(matrixEncoder.encode(matrixParam.getValue()));
+                buf.append(';');
+                buf.append(matrixEncoder.encode(matrixParam.getKey()));
+                buf.append('=');
+                buf.append(matrixEncoder.encode(matrixParam.getValue()));
             }
         }
 
-        return path.toString();
+        if (forceTrailingSlash) {
+            buf.append('/');
+        }
+    }
+
+    private void appendQuery(StringBuilder buf) throws MalformedInputException, UnmappableCharacterException {
+        if (!queryParams.isEmpty()) {
+            buf.append("?");
+            Iterator<Pair<String, String>> qpIter = queryParams.iterator();
+            while (qpIter.hasNext()) {
+                Pair<String, String> queryParam = qpIter.next();
+                buf.append(queryParamEncoder.encode(queryParam.getKey()));
+                buf.append('=');
+                buf.append(queryParamEncoder.encode(queryParam.getValue()));
+                if (qpIter.hasNext()) {
+                    buf.append('&');
+                }
+            }
+        } else if (unstructuredQuery != null) {
+            buf.append("?");
+            buf.append(unstructuredQueryEncoder.encode(unstructuredQuery));
+        }
+    }
+
+    private void appendFragment(StringBuilder buf) throws MalformedInputException, UnmappableCharacterException {
+        if (fragment != null) {
+            buf.append('#');
+            buf.append(fragmentEncoder.encode(fragment));
+        }
+    }
+
+    public URL toUrl() throws CharacterCodingException, MalformedURLException {
+        StringBuilder buf = new StringBuilder();
+
+        appendPath(buf);
+        appendQuery(buf);
+        appendFragment(buf);
+
+        String path = buf.toString();
+
+        if (port != null) {
+            return new URL(scheme, host, port, path);
+        } else {
+            return new URL(scheme, host, path);
+        }
     }
 
     /**
@@ -353,33 +398,9 @@ public final class UrlBuilder {
             buf.append(port);
         }
 
-        buf.append(getPathString());
-
-        if (forceTrailingSlash) {
-            buf.append('/');
-        }
-
-        if (!queryParams.isEmpty()) {
-            buf.append("?");
-            Iterator<Pair<String, String>> qpIter = queryParams.iterator();
-            while (qpIter.hasNext()) {
-                Pair<String, String> queryParam = qpIter.next();
-                buf.append(queryParamEncoder.encode(queryParam.getKey()));
-                buf.append('=');
-                buf.append(queryParamEncoder.encode(queryParam.getValue()));
-                if (qpIter.hasNext()) {
-                    buf.append('&');
-                }
-            }
-        } else if (unstructuredQuery != null) {
-            buf.append("?");
-            buf.append(unstructuredQueryEncoder.encode(unstructuredQuery));
-        }
-
-        if (fragment != null) {
-            buf.append('#');
-            buf.append(fragmentEncoder.encode(fragment));
-        }
+        appendPath(buf);
+        appendQuery(buf);
+        appendFragment(buf);
 
         return buf.toString();
     }
