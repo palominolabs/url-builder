@@ -5,21 +5,18 @@
 package com.palominolabs.http.url;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang3.tuple.Pair;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.NotThreadSafe;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.MalformedInputException;
-import java.nio.charset.UnmappableCharacterException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
+import org.apache.commons.lang3.tuple.Pair;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.palominolabs.http.url.UrlPercentEncoders.getFragmentEncoder;
@@ -338,7 +335,7 @@ public final class UrlBuilder {
         }
     }
 
-    private void appendQuery(StringBuilder buf) throws MalformedInputException, UnmappableCharacterException {
+    private void appendQuery(StringBuilder buf) throws CharacterCodingException {
         if (!queryParams.isEmpty()) {
             buf.append("?");
             Iterator<Pair<String, String>> qpIter = queryParams.iterator();
@@ -357,14 +354,14 @@ public final class UrlBuilder {
         }
     }
 
-    private void appendFragment(StringBuilder buf) throws MalformedInputException, UnmappableCharacterException {
+    private void appendFragment(StringBuilder buf) throws CharacterCodingException {
         if (fragment != null) {
             buf.append('#');
             buf.append(fragmentEncoder.encode(fragment));
         }
     }
 
-    public URL toUrl() throws CharacterCodingException, MalformedURLException {
+    public URL toUrl() throws CharacterCodingException {
         StringBuilder buf = new StringBuilder();
 
         appendPath(buf);
@@ -373,10 +370,14 @@ public final class UrlBuilder {
 
         String path = buf.toString();
 
-        if (port != null) {
-            return new URL(scheme, host, port, path);
-        } else {
-            return new URL(scheme, host, path);
+        try {
+            if (port != null) {
+                return new URL(scheme, host, port, path);
+            } else {
+                return new URL(scheme, host, path);
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Unknown scheme specified", e);
         }
     }
 

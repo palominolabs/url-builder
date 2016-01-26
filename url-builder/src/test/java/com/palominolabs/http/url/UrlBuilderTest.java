@@ -5,13 +5,12 @@
 package com.palominolabs.http.url;
 
 import com.google.common.base.Throwables;
-import org.junit.Test;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
+import org.junit.Test;
 
 import static com.palominolabs.http.url.UrlBuilder.forHost;
 import static com.palominolabs.http.url.UrlBuilder.fromUrl;
@@ -419,6 +418,17 @@ public final class UrlBuilderTest {
                 .clearQuery()
                 .queryParam("foo", "bar");
         assertEquals(ub.toUrlString(), ub.toUrl().toString());
+    }
+
+    @Test
+    public void testToUrlThrowsExceptionForUnknownScheme() throws MalformedURLException, CharacterCodingException {
+        UrlBuilder ub = forHost("foo", "host");
+        try {
+            ub.toUrl();
+            fail("Expected RuntimeException to be thrown");
+        } catch (RuntimeException e) {
+            assertEquals(e.getMessage(), "Unknown scheme specified");
+        }
     }
 
     private void assertUrlBuilderRoundtrip(String url) {
