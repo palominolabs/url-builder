@@ -10,7 +10,7 @@ subprojects {
   ext {
     depVersions = [
         slf4j: '1.7.12',
-        jmh  : '1.11.1'
+        jmh  : '1.13'
     ]
   }
 }

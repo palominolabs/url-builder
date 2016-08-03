@@ -3,9 +3,11 @@ plugins {
 }
 
 jmh {
-  jmhVersion = '1.13'
+  jmhVersion = depVersions.jmh
 }
 
 dependencies {
   compile project(':url-builder')
+  // let the IDE see the JMH types
+  compile "org.openjdk.jmh:jmh-core:$depVersions.jmh"
 }
