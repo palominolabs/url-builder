@@ -1,9 +1,9 @@
 plugins {
-  id 'me.champeau.gradle.jmh' version '0.2.0'
+  id 'me.champeau.gradle.jmh' version '0.3.0'
 }
 
 jmh {
-  jmhVersion = '1.11.3'
+  jmhVersion = '1.13'
 }
 
 dependencies {
