@@ -414,10 +414,9 @@ public final class UrlBuilderTest {
     @Test
     public void testToUrlMatchesToUrlString() throws MalformedURLException, CharacterCodingException {
         UrlBuilder ub = forHost("http", "host")
-                .unstructuredQuery("foobar")
-                .clearQuery()
-                .queryParam("foo", "bar");
-        // TODO add path & fragment
+                .pathSegment("pithy")
+                .queryParam("foo", "bar")
+                .fragment("fraggled");
         assertEquals(ub.toUrlString(), ub.toUrl().toString());
     }
 
