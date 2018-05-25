@@ -417,6 +417,7 @@ public final class UrlBuilderTest {
                 .unstructuredQuery("foobar")
                 .clearQuery()
                 .queryParam("foo", "bar");
+        // TODO add path & fragment
         assertEquals(ub.toUrlString(), ub.toUrl().toString());
     }
 
@@ -426,7 +427,7 @@ public final class UrlBuilderTest {
         try {
             ub.toUrl();
             fail("Expected RuntimeException to be thrown");
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             assertEquals(e.getMessage(), "Unknown scheme specified");
         }
     }

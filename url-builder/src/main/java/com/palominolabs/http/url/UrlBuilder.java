@@ -361,6 +361,13 @@ public final class UrlBuilder {
         }
     }
 
+    /**
+     * Create a {@link URL} object from the current builder state.
+     *
+     * @return a URL object
+     * @throws CharacterCodingException
+     * @throws IllegalArgumentException if {@link URL} doesn't recognize the scheme (protocol)
+     */
     public URL toUrl() throws CharacterCodingException {
         StringBuilder buf = new StringBuilder();
 
@@ -377,7 +384,7 @@ public final class UrlBuilder {
                 return new URL(scheme, host, path);
             }
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Unknown scheme specified", e);
+            throw new IllegalArgumentException("Unknown scheme specified", e);
         }
     }
 
