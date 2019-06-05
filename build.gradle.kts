@@ -102,3 +102,7 @@ jmh {
 release {
     tagTemplate = "v\$version"
 }
+
+tasks.afterReleaseBuild {
+    dependsOn(tasks.bintrayUpload)
+}
