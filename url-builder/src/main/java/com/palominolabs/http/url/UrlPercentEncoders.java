@@ -7,8 +7,8 @@ package com.palominolabs.http.url;
 import java.util.BitSet;
 import javax.annotation.concurrent.ThreadSafe;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static java.nio.charset.CodingErrorAction.REPLACE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * See RFC 3986, RFC 1738 and http://www.lunatech-research.com/archives/2009/02/03/what-every-web-developer-must-know-about-url-encoding.

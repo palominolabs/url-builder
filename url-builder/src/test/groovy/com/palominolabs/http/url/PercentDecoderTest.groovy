@@ -4,9 +4,9 @@ import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Test
 
-import static com.google.common.base.Charsets.UTF_8
 import static java.lang.Character.isHighSurrogate
 import static java.lang.Character.isLowSurrogate
+import static java.nio.charset.StandardCharsets.UTF_8
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.fail
 

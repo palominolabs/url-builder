@@ -4,7 +4,6 @@
 
 package com.palominolabs.http.url;
 
-import com.google.common.collect.Lists;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
@@ -15,15 +14,14 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-import org.apache.commons.lang3.tuple.Pair;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.palominolabs.http.url.UrlPercentEncoders.getFragmentEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getMatrixEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getPathEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getQueryParamEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getRegNameEncoder;
 import static com.palominolabs.http.url.UrlPercentEncoders.getUnstructuredQueryEncoder;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Builder for urls with url-encoding applied to path, query param, etc.
@@ -57,7 +55,7 @@ public final class UrlBuilder {
     @Nullable
     private final Integer port;
 
-    private final List<Pair<String, String>> queryParams = Lists.newArrayList();
+    private final List<Pair<String, String>> queryParams = new ArrayList<>();
 
     /**
      * If this is non-null, queryParams must be empty, and vice versa.
@@ -65,7 +63,7 @@ public final class UrlBuilder {
     @Nullable
     private String unstructuredQuery;
 
-    private final List<PathSegment> pathSegments = Lists.newArrayList();
+    private final List<PathSegment> pathSegments = new ArrayList<>();
 
     private final PercentEncoder pathEncoder = getPathEncoder();
     private final PercentEncoder regNameEncoder = getRegNameEncoder();
@@ -389,7 +387,7 @@ public final class UrlBuilder {
             String q = url.getQuery();
 
             // try to parse into &-separated key=value pairs
-            List<Pair<String, String>> pairs = new ArrayList<Pair<String, String>>();
+            List<Pair<String, String>> pairs = new ArrayList<>();
             boolean parseOk = true;
 
             for (String queryChunk : q.split("&")) {
@@ -486,10 +484,33 @@ public final class UrlBuilder {
      */
     private static class PathSegment {
         private final String segment;
-        private final List<Pair<String, String>> matrixParams = Lists.newArrayList();
+        private final List<Pair<String, String>> matrixParams = new ArrayList<>();
 
         PathSegment(String segment) {
             this.segment = segment;
+        }
+    }
+
+    private static class Pair<K, V> {
+
+        private final K key;
+        private final V value;
+
+        private Pair(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        K getKey() {
+            return key;
+        }
+
+        V getValue() {
+            return value;
+        }
+
+        static <K, V> Pair<K,V> of(K key, V value) {
+            return new Pair<>(key, value);
         }
     }
 }

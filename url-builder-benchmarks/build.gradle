@@ -10,4 +10,6 @@ dependencies {
   compile project(':url-builder')
   // let the IDE see the JMH types
   compile "org.openjdk.jmh:jmh-core:$depVersions.jmh"
+  implementation 'com.google.guava:guava:27.1-jre'
+
 }

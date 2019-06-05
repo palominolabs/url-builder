@@ -12,9 +12,9 @@ import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.util.BitSet;
 
-import static com.google.common.base.Charsets.UTF_16BE;
-import static com.google.common.base.Charsets.UTF_8;
 import static java.nio.charset.CodingErrorAction.REPLACE;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 public final class PercentEncoderTest {

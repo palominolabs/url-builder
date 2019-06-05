@@ -4,7 +4,6 @@
 
 package com.palominolabs.http.url;
 
-import com.google.common.base.Throwables;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -321,17 +320,17 @@ public final class UrlBuilderTest {
     }
 
     @Test
-    public void testFromUrlMalformedQueryParamMultiValues() throws MalformedURLException, CharacterCodingException {
+    public void testFromUrlMalformedQueryParamMultiValues() {
         assertUrlBuilderRoundtrip("http://foo.com/foo?q1=v1=v2");
     }
 
     @Test
-    public void testFromUrlMalformedQueryParamNoValue() throws MalformedURLException, CharacterCodingException {
+    public void testFromUrlMalformedQueryParamNoValue() {
         assertUrlBuilderRoundtrip("http://foo.com/foo?q1=v1&q2");
     }
 
     @Test
-    public void testFromUrlUnstructuredQueryWithEscapedChars() throws MalformedURLException, CharacterCodingException {
+    public void testFromUrlUnstructuredQueryWithEscapedChars() {
         assertUrlBuilderRoundtrip("http://foo.com/foo?query==&%23");
     }
 
@@ -422,10 +421,8 @@ public final class UrlBuilderTest {
     private void assertUrlBuilderRoundtrip(String origUrl, String finalUrl) {
         try {
             assertUrlEquals(finalUrl, fromUrl(new URL(origUrl)).toUrlString());
-        } catch (CharacterCodingException e) {
-            throw Throwables.propagate(e);
-        } catch (MalformedURLException e) {
-            throw Throwables.propagate(e);
+        } catch (CharacterCodingException | MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -434,12 +431,12 @@ public final class UrlBuilderTest {
         try {
             assertEquals(expected, new URI(actual).toString());
         } catch (URISyntaxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         try {
             assertEquals(expected, new URL(actual).toString());
         } catch (MalformedURLException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 }
