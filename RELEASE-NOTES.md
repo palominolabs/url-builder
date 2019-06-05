@@ -1,3 +1,6 @@
+- 1.1.2
+    - Drop commons-lang, guava, and slf4j dependencies
+    - Require Java 8
 - 1.1.1
     - Performance tuning
     - Allow unstructured HTTP query (not in `key=value&key=value` form)
