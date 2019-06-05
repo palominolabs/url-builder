@@ -4,11 +4,12 @@ plugins {
     `java-library`
     id("groovy")
     id("maven-publish")
-    
+
     id("com.github.ben-manes.versions") version "0.21.0"
     id("com.jfrog.bintray") version "1.8.4"
     id("com.github.spotbugs") version "2.0.0"
     id("me.champeau.gradle.jmh") version "0.4.8"
+    id("net.researchgate.release") version "2.8.0"
 }
 
 java {
@@ -55,7 +56,6 @@ tasks {
 }
 
 group = "com.palominolabs.http"
-version = "1.1.2-SNAPSHOT"
 
 publishing {
     publications {
@@ -97,4 +97,8 @@ spotbugs {
 
 jmh {
     jmhVersion = depVersions["jmh"]
+}
+
+release {
+    tagTemplate = "v\$version"
 }
