@@ -9,13 +9,9 @@ subprojects {
 
   ext {
     depVersions = [
-        slf4j: '1.7.12',
-        jmh  : '1.13'
+        slf4j: '1.7.26',
+        jmh  : '1.21'
     ]
   }
-}
-
-task wrapper(type: Wrapper) {
-  gradleVersion = '2.14.1'
 }
 
