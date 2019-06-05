@@ -9,7 +9,7 @@ Artifacts are released in [Bintray](https://bintray.com/marshallpierce/maven/com
 Add this to the `dependencies` block in your `build.gradle`:
 
 ```groovy
-compile 'com.palominolabs.http:url-builder:VERSION'
+implementation("com.palominolabs.http:url-builder:VERSION")
 ```
 
 where `VERSION` is the latest released version.  If you're using Maven, know that your life could be greatly improved by switching to Gradle and use this dependency block:
