@@ -5,11 +5,11 @@ plugins {
     id("groovy")
     id("maven-publish")
 
-    id("com.github.ben-manes.versions") version "0.21.0"
+    id("com.github.ben-manes.versions") version "0.27.0"
     id("com.jfrog.bintray") version "1.8.4"
-    id("com.github.spotbugs") version "2.0.0"
-    id("me.champeau.gradle.jmh") version "0.4.8"
-    id("net.researchgate.release") version "2.8.0"
+    id("com.github.spotbugs") version "3.0.0"
+    id("me.champeau.gradle.jmh") version "0.5.0"
+    id("net.researchgate.release") version "2.8.1"
 }
 
 java {
@@ -23,24 +23,24 @@ repositories {
 
 val depVersions by extra {
     mapOf(
-            "slf4j" to "1.7.26",
-            "jmh" to "1.21"
+            "slf4j" to "1.7.30",
+            "jmh" to "1.22"
     )
 }
 
 dependencies {
-    compile("com.google.code.findbugs:jsr305:3.0.2")
+    api("com.google.code.findbugs:jsr305:3.0.2")
 
-    testRuntime("org.slf4j:slf4j-simple:${depVersions["slf4j"]}")
-    testRuntime("org.slf4j:log4j-over-slf4j:${depVersions["slf4j"]}")
-    testRuntime("org.slf4j:jcl-over-slf4j:${depVersions["slf4j"]}")
-    testCompile("org.slf4j:jul-to-slf4j:${depVersions["slf4j"]}")
+    testRuntimeOnly("org.slf4j:slf4j-simple:${depVersions["slf4j"]}")
+    testRuntimeOnly("org.slf4j:log4j-over-slf4j:${depVersions["slf4j"]}")
+    testRuntimeOnly("org.slf4j:jcl-over-slf4j:${depVersions["slf4j"]}")
+    testImplementation("org.slf4j:jul-to-slf4j:${depVersions["slf4j"]}")
 
-    testCompile("junit:junit:4.12")
+    testImplementation("junit:junit:4.12")
 
-    testCompile("org.codehaus.groovy:groovy-all:2.4.4")
+    testImplementation("org.codehaus.groovy:groovy-all:2.4.4")
 
-    jmh("com.google.guava:guava:27.1-jre")
+    jmhImplementation("com.google.guava:guava:27.1-jre")
 }
 
 tasks {
