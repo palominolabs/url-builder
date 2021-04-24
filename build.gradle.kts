@@ -7,7 +7,7 @@ plugins {
     kotlin("jvm") version "1.4.32"
     id("maven-publish")
     signing
-    id("io.github.gradle-nexus.publish-plugin") version "1.0.0"
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
     id("com.github.ben-manes.versions") version "0.38.0"
     id("me.champeau.gradle.jmh") version "0.5.3"
     id("net.researchgate.release") version "2.8.1"
@@ -29,7 +29,7 @@ val deps by extra {
     mapOf(
         "slf4j" to "1.7.30",
         "jmh" to "1.22",
-        "junit" to "5.7.0"
+        "junit" to "5.7.1"
     )
 }
 
