@@ -124,7 +124,7 @@ nexusPublishing {
     repositories {
         sonatype {
             // sonatypeUsername and sonatypePassword properties are used automatically
-            stagingProfileId.set("ab8c5618978d18") // org.mpierce
+            stagingProfileId.set("26c8b7fff47581") // com.palominolabs
         }
     }
     // these are not strictly required. The default timeouts are set to 1 minute. But Sonatype can be really slow.
