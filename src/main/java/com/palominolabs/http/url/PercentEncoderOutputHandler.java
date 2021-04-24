@@ -2,6 +2,9 @@ package com.palominolabs.http.url;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+/**
+ * A callback used during percent encoding.
+ */
 @NotThreadSafe
 public interface PercentEncoderOutputHandler {
     /**

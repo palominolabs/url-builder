@@ -61,31 +61,49 @@ public final class UrlPercentEncoders {
         addFragment(FRAGMENT_BIT_SET);
     }
 
+    /**
+     * @return a PercentEncoder for RFC 3986 'reg-name' characters
+     */
     public static PercentEncoder getRegNameEncoder() {
         return new PercentEncoder(REG_NAME_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
                 .onUnmappableCharacter(REPLACE));
     }
 
+    /**
+     * @return a PercentEncoder for RFC 3986 'pchar'
+     */
     public static PercentEncoder getPathEncoder() {
         return new PercentEncoder(PATH_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
                 .onUnmappableCharacter(REPLACE));
     }
 
+    /**
+     * @return a PercentEncoder for RFC 1738 S3.3 matrix params
+     */
     public static PercentEncoder getMatrixEncoder() {
         return new PercentEncoder(MATRIX_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
                 .onUnmappableCharacter(REPLACE));
     }
 
+    /**
+     * @return a PercentEncoder for RFC 3986 'query''
+     */
     public static PercentEncoder getUnstructuredQueryEncoder() {
         return new PercentEncoder(UNSTRUCTURED_QUERY_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
                 .onUnmappableCharacter(REPLACE));
     }
 
+    /**
+     * @return a PercentEncoder for HTML queries
+     */
     public static PercentEncoder getQueryParamEncoder() {
         return new PercentEncoder(QUERY_PARAM_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
                 .onUnmappableCharacter(REPLACE));
     }
 
+    /**
+     * @return a PercentEncoder for fragments
+     */
     public static PercentEncoder getFragmentEncoder() {
         return new PercentEncoder(FRAGMENT_BIT_SET, UTF_8.newEncoder().onMalformedInput(REPLACE)
                 .onUnmappableCharacter(REPLACE));

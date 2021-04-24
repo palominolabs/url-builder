@@ -9,12 +9,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.palominolabs.http.url.UrlBuilder.forHost;
 import static com.palominolabs.http.url.UrlBuilder.fromUrl;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public final class UrlBuilderTest {
 

@@ -4,25 +4,24 @@
 
 package com.palominolabs.http.url;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.util.BitSet;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.CodingErrorAction.REPLACE;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class PercentEncoderTest {
 
     private PercentEncoder alnum;
     private PercentEncoder alnum16;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         BitSet bs = new BitSet();
         for (int i = 'a'; i <= 'z'; i++) {

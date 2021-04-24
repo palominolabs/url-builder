@@ -33,6 +33,11 @@ public final class StringBuilderPercentEncoderOutputHandler implements PercentEn
         stringBuilder.setLength(0);
     }
 
+    /**
+     * Ensure the internal buffer has enough capacity for the specified length of input.
+     *
+     * @param length length to ensure capacity for
+     */
     public void ensureCapacity(int length) {
         stringBuilder.ensureCapacity(length);
     }
