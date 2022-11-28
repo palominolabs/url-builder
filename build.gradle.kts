@@ -134,3 +134,9 @@ nexusPublishing {
     connectTimeout.set(Duration.ofMinutes(3))
     clientTimeout.set(Duration.ofMinutes(3))
 }
+
+release {
+    git {
+        requireBranch.set("master")
+    }
+}
