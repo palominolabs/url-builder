@@ -4,21 +4,23 @@ import java.time.Duration
 
 plugins {
     `java-library`
-    kotlin("jvm") version "1.4.32"
+    kotlin("jvm") version "1.7.20"
     id("maven-publish")
     signing
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-    id("com.github.ben-manes.versions") version "0.38.0"
+    id("com.github.ben-manes.versions") version "0.44.0"
     id("me.champeau.gradle.jmh") version "0.5.3"
-    id("net.researchgate.release") version "2.8.1"
-    id("org.jmailen.kotlinter") version "3.4.0"
+    id("net.researchgate.release") version "3.0.2"
+    id("org.jmailen.kotlinter") version "3.12.0"
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
     withSourcesJar()
     withJavadocJar()
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+        vendor.set(JvmVendorSpec.AZUL)
+    }
 }
 
 repositories {
@@ -27,9 +29,9 @@ repositories {
 
 val deps by extra {
     mapOf(
-        "slf4j" to "1.7.30",
+        "slf4j" to "2.0.5",
         "jmh" to "1.22",
-        "junit" to "5.7.1"
+        "junit" to "5.9.1"
     )
 }
 
@@ -48,7 +50,7 @@ dependencies {
     testImplementation(kotlin("test-junit5"))
 
 
-    jmhImplementation("com.google.guava", "guava", "27.1-jre")
+    jmhImplementation("com.google.guava", "guava", "31.1-jre")
 }
 
 group = "com.palominolabs.http"
