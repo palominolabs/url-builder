@@ -1,3 +1,9 @@
+- 1.1.5
+  - Build with Java 8 toolchain to resolve [#13](https://github.com/palominolabs/url-builder/issues/13).
+- 1.1.4
+  - More publication-related tinkering
+- 1.1.3
+  - Switch to publishing via Maven Central
 - 1.1.2
     - Drop commons-lang, guava, and slf4j dependencies
     - Require Java 8
